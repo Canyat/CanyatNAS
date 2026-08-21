@@ -129,6 +129,6 @@ server.listen(PORT, () => {
     console.log(`===========================================`);
     console.log(`🚀 CanyatNAS Dashboard is active!`);
     console.log(`🌐 Web UI & API: http://localhost:${PORT}`);
-    console.log(`📁 Target platform: Ubuntu Server / Mini PC`);
+    console.log(`📁 Platform: ${process.platform === 'win32' ? 'Windows NAS' : 'Linux / Unix Server'}`);
     console.log(`===========================================`);
 });

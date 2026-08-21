@@ -1,4 +1,5 @@
 @echo off
+setlocal
 chcp 65001 >nul
 title CanyatNAS Control Panel
 
@@ -9,13 +10,7 @@ echo.
 
 REM Check Node.js
 where node >nul 2>nul
-if %errorlevel% neq 0 (
-    echo [Error] Node.js is not found in PATH!
-    echo Please install Node.js (v18+) from https://nodejs.org
-    echo.
-    pause
-    exit /b 1
-)
+if %errorlevel% neq 0 goto :NO_NODE
 
 REM Check backend dependencies
 if not exist "backend\node_modules" (
@@ -45,4 +40,13 @@ start http://localhost:5678
 REM Start backend server
 node backend\dist\server.js
 
+goto :EOF
+
+:NO_NODE
+echo [Error] Node.js is not found in your system PATH!
+echo Please install Node.js v18 or higher from https://nodejs.org
+echo.
 pause
+exit /b 1
+
+:EOF
