@@ -60,22 +60,22 @@ export const CreateShareModal: React.FC<CreateShareModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-      <div className="flex flex-col bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="flex flex-col glass-panel rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 bg-slate-900 border-b border-slate-800">
+        <div className="flex items-center justify-between px-5 py-4 glass-inner border-b border-black/10 dark:border-white/10">
           <div className="flex items-center space-x-2.5">
-            <div className="p-2 bg-purple-500/10 text-purple-400 rounded-xl">
+            <div className="p-2 bg-purple-500/15 text-purple-400 rounded-xl">
               <Share2 className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm text-slate-200">创建文件共享</h3>
-              <p className="text-xs text-slate-400 truncate max-w-[240px]">{file.name}</p>
+              <h3 className="font-semibold text-sm">创建文件共享</h3>
+              <p className="text-xs opacity-70 truncate max-w-[240px]">{file.name}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+            className="p-1.5 opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -87,27 +87,27 @@ export const CreateShareModal: React.FC<CreateShareModalProps> = ({
             <form onSubmit={handleCreate} className="space-y-4">
               {/* Expire Time */}
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center space-x-1.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <label className="block text-xs font-medium opacity-80 mb-1.5 flex items-center space-x-1.5">
+                  <Clock className="w-3.5 h-3.5 opacity-60" />
                   <span>有效期</span>
                 </label>
                 <select
                   value={expireHours}
                   onChange={(e) => setExpireHours(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-purple-500"
+                  className="w-full px-3 py-2 glass-input rounded-xl text-sm"
                 >
-                  <option value="1">1 小时</option>
-                  <option value="24">24 小时 (1 天)</option>
-                  <option value="168">7 天</option>
-                  <option value="720">30 天</option>
-                  <option value="">永久有效 (不设过期时间)</option>
+                  <option value="1" className="text-black dark:text-white">1 小时</option>
+                  <option value="24" className="text-black dark:text-white">24 小时 (1 天)</option>
+                  <option value="168" className="text-black dark:text-white">7 天</option>
+                  <option value="720" className="text-black dark:text-white">30 天</option>
+                  <option value="" className="text-black dark:text-white">永久有效 (不设过期时间)</option>
                 </select>
               </div>
 
               {/* Password Protection */}
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center space-x-1.5">
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                <label className="block text-xs font-medium opacity-80 mb-1.5 flex items-center space-x-1.5">
+                  <Lock className="w-3.5 h-3.5 opacity-60" />
                   <span>访问密码 (可选)</span>
                 </label>
                 <input
@@ -115,14 +115,14 @@ export const CreateShareModal: React.FC<CreateShareModalProps> = ({
                   placeholder="留空即为免密公开访问"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-purple-500 placeholder:text-slate-600"
+                  className="w-full px-3 py-2 glass-input rounded-xl text-sm"
                 />
               </div>
 
               {/* Max Downloads */}
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center space-x-1.5">
-                  <Download className="w-3.5 h-3.5 text-slate-400" />
+                <label className="block text-xs font-medium opacity-80 mb-1.5 flex items-center space-x-1.5">
+                  <Download className="w-3.5 h-3.5 opacity-60" />
                   <span>最大下载次数限制 (可选)</span>
                 </label>
                 <input
@@ -131,13 +131,13 @@ export const CreateShareModal: React.FC<CreateShareModalProps> = ({
                   min="1"
                   value={maxDownloads}
                   onChange={(e) => setMaxDownloads(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-purple-500 placeholder:text-slate-600"
+                  className="w-full px-3 py-2 glass-input rounded-xl text-sm"
                 />
               </div>
 
               {/* Note */}
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                <label className="block text-xs font-medium opacity-80 mb-1.5">
                   备注说明 (可选)
                 </label>
                 <input
@@ -145,7 +145,7 @@ export const CreateShareModal: React.FC<CreateShareModalProps> = ({
                   placeholder="如：给朋友分享的电影、项目文档"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-200 focus:outline-none focus:border-purple-500 placeholder:text-slate-600"
+                  className="w-full px-3 py-2 glass-input rounded-xl text-sm"
                 />
               </div>
 
@@ -161,19 +161,19 @@ export const CreateShareModal: React.FC<CreateShareModalProps> = ({
             </form>
           ) : (
             <div className="space-y-4 text-center">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center mx-auto">
                 <Check className="w-6 h-6" />
               </div>
-              <h4 className="text-base font-semibold text-white">分享链接生成成功！</h4>
-              <p className="text-xs text-slate-400">任何人凭此链接即可在浏览器中直接预览或高速下载该文件。</p>
+              <h4 className="text-base font-semibold">分享链接生成成功！</h4>
+              <p className="text-xs opacity-75">任何人凭此链接即可在浏览器中直接预览或高速下载该文件。</p>
 
               {/* Share link box */}
-              <div className="flex items-center space-x-2 p-2 bg-slate-900 border border-slate-800 rounded-xl text-left">
+              <div className="flex items-center space-x-2 p-2 glass-inner rounded-xl text-left">
                 <input
                   type="text"
                   readOnly
                   value={shareUrl}
-                  className="flex-1 bg-transparent text-xs text-purple-300 font-mono focus:outline-none truncate"
+                  className="flex-1 bg-transparent text-xs text-purple-400 font-mono focus:outline-none truncate"
                 />
                 <button
                   onClick={handleCopyLink}
@@ -190,7 +190,7 @@ export const CreateShareModal: React.FC<CreateShareModalProps> = ({
                   <div className="p-2 bg-white rounded-xl shadow-md">
                     <img src={qrCodeDataUrl} alt="QR Code" className="w-36 h-36" />
                   </div>
-                  <p className="text-[11px] text-slate-500 mt-2 flex items-center space-x-1">
+                  <p className="text-[11px] opacity-60 mt-2 flex items-center space-x-1">
                     <QrCode className="w-3 h-3" />
                     <span>手机微信 / 浏览器扫码即可下载</span>
                   </p>
@@ -200,7 +200,7 @@ export const CreateShareModal: React.FC<CreateShareModalProps> = ({
               <div className="pt-2">
                 <button
                   onClick={onClose}
-                  className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-xl transition-colors"
+                  className="w-full py-2 glass-btn-secondary text-xs font-medium rounded-xl transition-colors"
                 >
                   关闭
                 </button>

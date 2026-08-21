@@ -72,30 +72,30 @@ export const ContainerLogsModal: React.FC<ContainerLogsModalProps> = ({
     : logs;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-      <div className="flex flex-col bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl h-[650px] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="flex flex-col glass-panel rounded-2xl shadow-2xl w-full max-w-5xl h-[650px] overflow-hidden">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between px-5 py-3.5 bg-slate-900 border-b border-slate-800 gap-3">
+        <div className="flex flex-wrap items-center justify-between px-5 py-3.5 glass-inner border-b border-black/10 dark:border-white/10 gap-3">
           <div className="flex items-center space-x-2.5">
-            <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl">
+            <div className="p-2 bg-indigo-500/15 text-indigo-400 rounded-xl">
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm text-slate-200">日志: {containerName}</h3>
-              <p className="text-[11px] text-slate-400 font-mono">ID: {containerId}</p>
+              <h3 className="font-semibold text-sm">日志: {containerName}</h3>
+              <p className="text-[11px] opacity-60 font-mono">ID: {containerId}</p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
             {/* Search Input */}
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 opacity-60 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="搜索日志..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 pr-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-blue-500 w-44"
+                className="pl-8 pr-3 py-1.5 text-xs glass-input rounded-lg w-44"
               />
             </div>
 
@@ -103,7 +103,7 @@ export const ContainerLogsModal: React.FC<ContainerLogsModalProps> = ({
             <button
               onClick={() => setAutoScroll(!autoScroll)}
               className={`p-1.5 rounded-lg border text-xs flex items-center space-x-1 transition-colors ${
-                autoScroll ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400'
+                autoScroll ? 'bg-blue-500/20 border-blue-500/40 text-blue-400' : 'glass-btn-secondary opacity-75'
               }`}
               title="自动滚动到最新"
             >
@@ -114,7 +114,7 @@ export const ContainerLogsModal: React.FC<ContainerLogsModalProps> = ({
             {/* Copy */}
             <button
               onClick={handleCopy}
-              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+              className="p-1.5 glass-btn-secondary rounded-lg transition-colors"
               title="复制全部日志"
             >
               <Copy className="w-3.5 h-3.5" />
@@ -123,7 +123,7 @@ export const ContainerLogsModal: React.FC<ContainerLogsModalProps> = ({
             {/* Download */}
             <button
               onClick={handleDownload}
-              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors"
+              className="p-1.5 glass-btn-secondary rounded-lg transition-colors"
               title="下载日志文件"
             >
               <Download className="w-3.5 h-3.5" />
@@ -132,7 +132,7 @@ export const ContainerLogsModal: React.FC<ContainerLogsModalProps> = ({
             {/* Clear Display */}
             <button
               onClick={() => setLogs([])}
-              className="p-1.5 bg-slate-800 hover:bg-rose-500/20 hover:text-rose-400 text-slate-400 rounded-lg transition-colors"
+              className="p-1.5 glass-btn-secondary hover:text-rose-400 rounded-lg transition-colors"
               title="清空显示"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -141,7 +141,7 @@ export const ContainerLogsModal: React.FC<ContainerLogsModalProps> = ({
             {/* Close */}
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors ml-2"
+              className="p-1.5 opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg transition-colors ml-2"
             >
               <X className="w-4 h-4" />
             </button>
@@ -151,15 +151,15 @@ export const ContainerLogsModal: React.FC<ContainerLogsModalProps> = ({
         {/* Log Viewer Content */}
         <div
           ref={logContainerRef}
-          className="flex-1 p-4 bg-slate-950 font-mono text-xs text-slate-300 overflow-y-auto leading-relaxed select-text"
+          className="flex-1 p-4 glass-card font-mono text-xs overflow-y-auto leading-relaxed select-text"
         >
           {filteredLogs.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-slate-600">
+            <div className="flex items-center justify-center h-full opacity-60">
               <span>暂无匹配日志记录</span>
             </div>
           ) : (
             filteredLogs.map((line, idx) => (
-              <div key={idx} className="hover:bg-slate-900/60 px-1 py-0.5 rounded whitespace-pre-wrap break-all">
+              <div key={idx} className="hover:bg-black/5 dark:hover:bg-white/5 px-1 py-0.5 rounded whitespace-pre-wrap break-all">
                 {line}
               </div>
             ))

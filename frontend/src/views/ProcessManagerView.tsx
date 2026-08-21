@@ -121,7 +121,7 @@ export const ProcessManagerView: React.FC = () => {
             </span>
             <span>自定义程序与服务管理</span>
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs opacity-75 mt-1">
             原生后台托管各类进程（支持 Windows .exe / .bat 与 Linux .sh / Python / Node），支持开机自启与崩溃守护
           </p>
         </div>
@@ -129,14 +129,14 @@ export const ProcessManagerView: React.FC = () => {
         <div className="flex items-center space-x-3">
           <button
             onClick={fetchProcesses}
-            className="p-2.5 rounded-xl glass-card text-slate-300 hover:text-white hover:border-slate-600 transition"
+            className="p-2.5 rounded-xl glass-btn-secondary transition"
             title="刷新状态"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm font-medium shadow-lg shadow-blue-500/25 transition"
+            className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-[var(--theme-primary)] hover:opacity-90 text-white text-sm font-medium shadow-lg transition"
           >
             <Plus className="w-4 h-4" />
             <span>添加自定义程序</span>
@@ -151,21 +151,21 @@ export const ProcessManagerView: React.FC = () => {
             <Activity className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-slate-400">运行中程序</div>
+            <div className="text-xs opacity-70">运行中程序</div>
             <div className="text-xl font-bold font-mono text-emerald-400">
-              {runningCount} <span className="text-xs text-slate-400 font-normal">/ {processes.length} 个</span>
+              {runningCount} <span className="text-xs opacity-70 font-normal">/ {processes.length} 个</span>
             </div>
           </div>
         </div>
 
         <div className="glass-card p-4 rounded-2xl flex items-center space-x-3.5">
-          <div className="p-3 rounded-xl bg-blue-500/20 text-blue-400">
+          <div className="p-3 rounded-xl bg-[var(--theme-primary)]/20 text-[var(--theme-primary)]">
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-slate-400">自启 & 守护</div>
-            <div className="text-xl font-bold font-mono text-blue-400">
-              {processes.filter(p => p.autoRestart).length} <span className="text-xs text-slate-400 font-normal">个开启崩溃重启</span>
+            <div className="text-xs opacity-70">自启 & 守护</div>
+            <div className="text-xl font-bold font-mono text-[var(--theme-primary)]">
+              {processes.filter(p => p.autoRestart).length} <span className="text-xs opacity-70 font-normal">个开启崩溃重启</span>
             </div>
           </div>
         </div>
@@ -175,9 +175,9 @@ export const ProcessManagerView: React.FC = () => {
             <Cpu className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-slate-400">宿主系统环境</div>
-            <div className="text-sm font-bold text-slate-200 truncate max-w-[180px]">
-              {isWin ? 'Windows NAS 架构' : 'Linux / Ubuntu Server'}
+            <div className="text-xs opacity-70">宿主系统环境</div>
+            <div className="text-sm font-bold truncate max-w-[180px]">
+              {isWin ? 'Windows NAS 架构' : 'Linux / Unix Server 架构'}
             </div>
           </div>
         </div>
@@ -186,18 +186,18 @@ export const ProcessManagerView: React.FC = () => {
       {/* Process List */}
       {processes.length === 0 ? (
         <div className="glass-card p-12 rounded-2xl text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--theme-primary)]/10 text-[var(--theme-primary)] flex items-center justify-center mx-auto">
             <Terminal className="w-8 h-8" />
           </div>
           <div className="max-w-md mx-auto space-y-1.5">
-            <h3 className="text-base font-semibold text-slate-200">暂无自定义程序</h3>
-            <p className="text-xs text-slate-400">
+            <h3 className="text-base font-semibold">暂无自定义程序</h3>
+            <p className="text-xs opacity-75">
               无需 Docker 也能轻松运行 FRP 穿透、DDNS 定时脚本、Palworld/MC 游戏服务端、Python 自动化任务等。
             </p>
           </div>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition"
+            className="px-4 py-2 rounded-xl bg-[var(--theme-primary)] hover:opacity-90 text-white text-xs font-medium transition"
           >
             立即添加第一个程序
           </button>
@@ -211,7 +211,7 @@ export const ProcessManagerView: React.FC = () => {
             return (
               <div
                 key={proc.id}
-                className="glass-card p-5 rounded-2xl space-y-4 border border-slate-800/80 hover:border-slate-700/80 transition flex flex-col justify-between"
+                className="glass-card p-5 rounded-2xl space-y-4 transition flex flex-col justify-between"
               >
                 {/* Header Info */}
                 <div className="flex items-start justify-between gap-3">
@@ -219,24 +219,24 @@ export const ProcessManagerView: React.FC = () => {
                     <div className={`p-2.5 rounded-xl shrink-0 ${
                       isRunning
                         ? 'bg-emerald-500/20 text-emerald-400'
-                        : 'bg-slate-800 text-slate-400'
+                        : 'glass-inner opacity-70'
                     }`}>
                       <Terminal className="w-5 h-5" />
                     </div>
                     <div>
                       <div className="flex items-center space-x-2 flex-wrap">
-                        <h4 className="font-semibold text-slate-100 text-sm">{proc.name}</h4>
+                        <h4 className="font-semibold text-sm">{proc.name}</h4>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold uppercase ${
                           isRunning
                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                             : proc.status === 'errored'
                             ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                            : 'bg-slate-800 text-slate-400'
+                            : 'glass-inner opacity-60'
                         }`}>
                           {proc.status === 'running' ? '运行中' : proc.status === 'errored' ? '异常' : '已停止'}
                         </span>
                       </div>
-                      <div className="text-xs font-mono text-slate-400 mt-1 truncate max-w-sm">
+                      <div className="text-xs font-mono opacity-70 mt-1 truncate max-w-sm">
                         {proc.command} {proc.args}
                       </div>
                     </div>
@@ -246,14 +246,14 @@ export const ProcessManagerView: React.FC = () => {
                   <div className="flex items-center space-x-1 shrink-0">
                     <button
                       onClick={() => setViewingLogsProcess(proc)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+                      className="p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 transition"
                       title="实时控制台日志"
                     >
                       <FileText className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(proc)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition"
+                      className="p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:text-red-400 transition"
                       title="删除配置"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -262,28 +262,28 @@ export const ProcessManagerView: React.FC = () => {
                 </div>
 
                 {/* Meta details */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 py-2 px-3 bg-slate-950/40 rounded-xl text-[11px] text-slate-400 font-mono">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 py-2 px-3 glass-inner rounded-xl text-[11px] font-mono opacity-85">
                   <div>
-                    <span className="text-slate-500 block">PID</span>
-                    <span className="text-slate-200 font-semibold">{proc.pid || '-'}</span>
+                    <span className="opacity-60 block">PID</span>
+                    <span className="font-semibold">{proc.pid || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">运行时间</span>
-                    <span className="text-slate-200">{formatUptime(proc.uptime || 0)}</span>
+                    <span className="opacity-60 block">运行时间</span>
+                    <span>{formatUptime(proc.uptime || 0)}</span>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">自启 / 重启</span>
-                    <span className="text-slate-300">
+                    <span className="opacity-60 block">自启 / 重启</span>
+                    <span>
                       {proc.autoStart ? '开机启动' : '手动'} • {proc.autoRestart ? '守护' : '单次'}
                     </span>
                   </div>
                 </div>
 
                 {/* Bottom Control Bar */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-800/60">
+                <div className="flex items-center justify-between pt-2 border-t border-black/10 dark:border-white/10">
                   <button
                     onClick={() => setViewingLogsProcess(proc)}
-                    className="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1"
+                    className="text-xs text-[var(--theme-primary)] hover:opacity-80 flex items-center space-x-1"
                   >
                     <FileText className="w-3.5 h-3.5" />
                     <span>查看输出日志</span>
@@ -295,7 +295,7 @@ export const ProcessManagerView: React.FC = () => {
                         <button
                           disabled={isActionLoading}
                           onClick={() => handleRestart(proc.id)}
-                          className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition flex items-center space-x-1.5"
+                          className="px-3 py-1.5 rounded-lg glass-btn-secondary text-xs font-medium transition flex items-center space-x-1.5"
                         >
                           <RefreshCw className={`w-3.5 h-3.5 ${isActionLoading ? 'animate-spin' : ''}`} />
                           <span>重启</span>
@@ -303,9 +303,9 @@ export const ProcessManagerView: React.FC = () => {
                         <button
                           disabled={isActionLoading}
                           onClick={() => handleStop(proc.id)}
-                          className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-medium transition flex items-center space-x-1.5"
+                          className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs font-medium transition flex items-center space-x-1.5"
                         >
-                          <Square className="w-3.5 h-3.5 fill-amber-300" />
+                          <Square className="w-3.5 h-3.5 fill-amber-400" />
                           <span>停止</span>
                         </button>
                       </>

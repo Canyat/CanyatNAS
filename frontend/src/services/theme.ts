@@ -13,15 +13,15 @@ export interface ThemeConfig {
 }
 
 export interface AppearanceConfig {
-  cardOpacity: number;    // 0.2 ~ 0.95 (default 0.55)
+  cardOpacity: number;    // 0.10 ~ 0.95 (default 0.35)
   cardBlur: number;       // 0 ~ 30 (default 16px)
-  bgMaskOpacity: number;  // 0.2 ~ 0.95 (default 0.65)
+  bgMaskOpacity: number;  // 0.10 ~ 0.95 (default 0.40)
 }
 
 export const DEFAULT_APPEARANCE: AppearanceConfig = {
-  cardOpacity: 0.55,
+  cardOpacity: 0.35,
   cardBlur: 16,
-  bgMaskOpacity: 0.65
+  bgMaskOpacity: 0.40
 };
 
 export const THEME_PRESETS: ThemeConfig[] = [

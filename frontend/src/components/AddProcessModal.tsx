@@ -111,62 +111,62 @@ export const AddProcessModal: React.FC<AddProcessModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in">
+      <div className="glass-panel rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
-          <div className="flex items-center space-x-2.5 text-slate-100 font-semibold text-base">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-black/10 dark:border-white/10 glass-inner">
+          <div className="flex items-center space-x-2.5 font-semibold text-base">
             <div className="p-2 rounded-xl bg-blue-600/20 text-blue-400">
               <Terminal className="w-5 h-5" />
             </div>
             <div>
               <h3>添加自定义程序 / 进程</h3>
-              <p className="text-xs text-slate-400 font-normal">支持 Windows (.exe/.bat) 及 Linux (.sh/Python/Node/二进制)</p>
+              <p className="text-xs opacity-75 font-normal">支持 Windows (.exe/.bat) 及 Linux (.sh/Python/Node/二进制)</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+            className="p-1.5 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Presets Bar */}
-        <div className="px-6 py-2.5 bg-slate-950/40 border-b border-slate-800/60 flex items-center space-x-2 overflow-x-auto text-xs">
-          <span className="text-slate-400 shrink-0 font-medium">快速模板:</span>
+        <div className="px-6 py-2.5 glass-inner border-b border-black/10 dark:border-white/10 flex items-center space-x-2 overflow-x-auto text-xs">
+          <span className="opacity-75 shrink-0 font-medium">快速模板:</span>
           <button
             type="button"
             onClick={() => applyPreset('frpc')}
-            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-blue-600/30 text-slate-200 hover:text-blue-300 transition"
+            className="px-2.5 py-1 rounded-lg glass-btn-secondary transition"
           >
             FRP 内网穿透
           </button>
           <button
             type="button"
             onClick={() => applyPreset('python')}
-            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-emerald-600/30 text-slate-200 hover:text-emerald-300 transition"
+            className="px-2.5 py-1 rounded-lg glass-btn-secondary transition"
           >
             Python 脚本
           </button>
           <button
             type="button"
             onClick={() => applyPreset('bat')}
-            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-amber-600/30 text-slate-200 hover:text-amber-300 transition"
+            className="px-2.5 py-1 rounded-lg glass-btn-secondary transition"
           >
             Windows .bat 批处理
           </button>
           <button
             type="button"
             onClick={() => applyPreset('sh')}
-            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-cyan-600/30 text-slate-200 hover:text-cyan-300 transition"
+            className="px-2.5 py-1 rounded-lg glass-btn-secondary transition"
           >
             Linux .sh
           </button>
           <button
             type="button"
             onClick={() => applyPreset('node')}
-            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-purple-600/30 text-slate-200 hover:text-purple-300 transition"
+            className="px-2.5 py-1 rounded-lg glass-btn-secondary transition"
           >
             Node.js 服务
           </button>
@@ -181,7 +181,7 @@ export const AddProcessModal: React.FC<AddProcessModalProps> = ({
           )}
 
           <div>
-            <label className="block text-slate-300 font-medium mb-1.5">
+            <label className="block font-medium mb-1.5">
               应用名称 <span className="text-red-400">*</span>
             </label>
             <input
@@ -190,13 +190,13 @@ export const AddProcessModal: React.FC<AddProcessModalProps> = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="例如：FRP 穿透服务 / Palworld 游戏服 / 数据同步器"
-              className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+              className="w-full px-3.5 py-2.5 glass-input rounded-xl transition"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-300 font-medium mb-1.5">
+              <label className="block font-medium mb-1.5">
                 可执行程序 / 命令 <span className="text-red-400">*</span>
               </label>
               <input
@@ -205,12 +205,12 @@ export const AddProcessModal: React.FC<AddProcessModalProps> = ({
                 value={command}
                 onChange={(e) => setCommand(e.target.value)}
                 placeholder="如: C:\tools\frpc.exe, python, bash"
-                className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono text-xs transition"
+                className="w-full px-3.5 py-2.5 glass-input rounded-xl font-mono text-xs transition"
               />
             </div>
 
             <div>
-              <label className="block text-slate-300 font-medium mb-1.5">
+              <label className="block font-medium mb-1.5">
                 运行参数 (Arguments)
               </label>
               <input
@@ -218,13 +218,13 @@ export const AddProcessModal: React.FC<AddProcessModalProps> = ({
                 value={args}
                 onChange={(e) => setArgs(e.target.value)}
                 placeholder="如: -c frpc.ini, main.py --port 8080"
-                className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono text-xs transition"
+                className="w-full px-3.5 py-2.5 glass-input rounded-xl font-mono text-xs transition"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-slate-300 font-medium mb-1.5">
+            <label className="block font-medium mb-1.5">
               工作目录 (Working Directory)
             </label>
             <input
@@ -232,18 +232,18 @@ export const AddProcessModal: React.FC<AddProcessModalProps> = ({
               value={cwd}
               onChange={(e) => setCwd(e.target.value)}
               placeholder="留空则默认为当前 NAS 面板目录"
-              className="w-full px-3.5 py-2.5 bg-slate-950/80 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono text-xs transition"
+              className="w-full px-3.5 py-2.5 glass-input rounded-xl font-mono text-xs transition"
             />
           </div>
 
           {/* Environment Variables */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-slate-300 font-medium text-xs">环境变量 (可选)</label>
+              <label className="font-medium text-xs">环境变量 (可选)</label>
               <button
                 type="button"
                 onClick={handleAddEnv}
-                className="text-xs text-blue-400 hover:text-blue-300 font-medium"
+                className="text-xs text-[var(--theme-primary)] hover:opacity-80 font-medium"
               >
                 + 添加环境变量
               </button>
@@ -255,20 +255,20 @@ export const AddProcessModal: React.FC<AddProcessModalProps> = ({
                   placeholder="KEY"
                   value={pair.key}
                   onChange={(e) => handleEnvChange(idx, 'key', e.target.value)}
-                  className="flex-1 px-3 py-1.5 bg-slate-950/80 border border-slate-700/80 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-blue-500"
+                  className="flex-1 px-3 py-1.5 glass-input rounded-lg font-mono text-xs"
                 />
-                <span className="text-slate-500">=</span>
+                <span className="opacity-60">=</span>
                 <input
                   type="text"
                   placeholder="VALUE"
                   value={pair.value}
                   onChange={(e) => handleEnvChange(idx, 'value', e.target.value)}
-                  className="flex-1 px-3 py-1.5 bg-slate-950/80 border border-slate-700/80 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-blue-500"
+                  className="flex-1 px-3 py-1.5 glass-input rounded-lg font-mono text-xs"
                 />
                 <button
                   type="button"
                   onClick={() => handleRemoveEnv(idx)}
-                  className="p-1.5 text-slate-500 hover:text-red-400"
+                  className="p-1.5 opacity-60 hover:opacity-100 hover:text-red-400"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -277,40 +277,40 @@ export const AddProcessModal: React.FC<AddProcessModalProps> = ({
           </div>
 
           {/* Toggles */}
-          <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-800">
-            <label className="flex items-center space-x-3 p-3 bg-slate-950/50 rounded-xl border border-slate-800/80 cursor-pointer hover:border-slate-700">
+          <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-black/10 dark:border-white/10">
+            <label className="flex items-center space-x-3 p-3 glass-inner rounded-xl cursor-pointer">
               <input
                 type="checkbox"
                 checked={autoStart}
                 onChange={(e) => setAutoStart(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700"
+                className="w-4 h-4 rounded text-[var(--theme-primary)] focus:ring-[var(--theme-primary)]"
               />
               <div>
-                <div className="font-medium text-slate-200 text-xs">开机 / 服务自启动</div>
-                <div className="text-[11px] text-slate-400">面板启动时自动拉起此程序</div>
+                <div className="font-medium text-xs">开机 / 服务自启动</div>
+                <div className="text-[11px] opacity-60">面板启动时自动拉起此程序</div>
               </div>
             </label>
 
-            <label className="flex items-center space-x-3 p-3 bg-slate-950/50 rounded-xl border border-slate-800/80 cursor-pointer hover:border-slate-700">
+            <label className="flex items-center space-x-3 p-3 glass-inner rounded-xl cursor-pointer">
               <input
                 type="checkbox"
                 checked={autoRestart}
                 onChange={(e) => setAutoRestart(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700"
+                className="w-4 h-4 rounded text-[var(--theme-primary)] focus:ring-[var(--theme-primary)]"
               />
               <div>
-                <div className="font-medium text-slate-200 text-xs">崩溃异常自动重启</div>
-                <div className="text-[11px] text-slate-400">程序异常退出时自动恢复</div>
+                <div className="font-medium text-xs">崩溃异常自动重启</div>
+                <div className="text-[11px] opacity-60">程序异常退出时自动恢复</div>
               </div>
             </label>
           </div>
 
           {/* Actions */}
-          <div className="pt-4 flex items-center justify-end space-x-3 border-t border-slate-800">
+          <div className="pt-4 flex items-center justify-end space-x-3 border-t border-black/10 dark:border-white/10">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition font-medium"
+              className="px-4 py-2 rounded-xl glass-btn-secondary transition font-medium"
             >
               取消
             </button>

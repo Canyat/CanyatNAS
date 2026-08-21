@@ -94,29 +94,29 @@ export const ContainerTerminal: React.FC<ContainerTerminalProps> = ({
   }, [containerId, containerName]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-      <div className={`flex flex-col bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden transition-all duration-200 ${isFullscreen ? 'w-full h-full' : 'w-full max-w-4xl h-[600px]'}`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className={`flex flex-col glass-panel rounded-2xl shadow-2xl overflow-hidden transition-all duration-200 ${isFullscreen ? 'w-full h-full' : 'w-full max-w-4xl h-[600px]'}`}>
         {/* Terminal Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 select-none">
+        <div className="flex items-center justify-between px-4 py-3 glass-inner border-b border-black/10 dark:border-white/10 select-none">
           <div className="flex items-center space-x-2">
-            <div className="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg">
+            <div className="p-1.5 bg-blue-500/15 text-blue-400 rounded-lg">
               <TerminalIcon className="w-4 h-4" />
             </div>
-            <span className="font-semibold text-sm text-slate-200">Terminal: {containerName}</span>
-            <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">ID: {containerId}</span>
+            <span className="font-semibold text-sm">Terminal: {containerName}</span>
+            <span className="text-xs px-2 py-0.5 rounded glass-inner opacity-75 font-mono">ID: {containerId}</span>
           </div>
 
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-1.5 opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg transition-colors"
               title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-1.5 opacity-70 hover:opacity-100 hover:text-rose-400 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg transition-colors"
               title="Close Terminal"
             >
               <X className="w-4 h-4" />
@@ -125,7 +125,7 @@ export const ContainerTerminal: React.FC<ContainerTerminalProps> = ({
         </div>
 
         {/* Xterm container */}
-        <div className="flex-1 p-3 bg-slate-950 overflow-hidden" ref={terminalRef} />
+        <div className="flex-1 p-3 bg-black/80 overflow-hidden" ref={terminalRef} />
       </div>
     </div>
   );

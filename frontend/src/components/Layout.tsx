@@ -51,7 +51,7 @@ export const Layout: React.FC<LayoutProps> = ({
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isAppearanceMenuOpen, setIsAppearanceMenuOpen] = useState(false);
   const [username, setUsername] = useState('Administrator');
-  const [version, setVersion] = useState('v1.2.0');
+  const [version, setVersion] = useState('v1.3.0');
   const [hasUpdate, setHasUpdate] = useState(false);
 
   useEffect(() => {
@@ -122,18 +122,18 @@ export const Layout: React.FC<LayoutProps> = ({
       <div className="theme-backdrop-mask" />
 
       {/* Sidebar - Desktop */}
-      <aside className="relative z-10 hidden md:flex flex-col w-64 glass-panel border-r border-slate-800/80 shadow-2xl">
+      <aside className="relative z-10 hidden md:flex flex-col w-64 glass-panel border-r border-black/10 dark:border-white/10 shadow-2xl">
         {/* Logo Brand */}
-        <div className="flex items-center space-x-3 px-6 py-5 border-b border-slate-800/60">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/25">
+        <div className="flex items-center space-x-3 px-6 py-5 border-b border-black/10 dark:border-white/10">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[var(--theme-primary)] to-[var(--theme-accent)] flex items-center justify-center text-white shadow-lg">
             <Server className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="font-bold text-base tracking-tight text-white flex items-center space-x-1.5">
+            <h1 className="font-bold text-base tracking-tight flex items-center space-x-1.5">
               <span>CanyatNAS</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-mono font-semibold">OS</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] font-mono font-semibold">OS</span>
             </h1>
-            <p className="text-[11px] text-slate-400 truncate max-w-[120px]">
+            <p className="text-[11px] opacity-60 truncate max-w-[120px]">
               {metrics?.host.hostname || 'Home Server'}
             </p>
           </div>
@@ -150,11 +150,11 @@ export const Layout: React.FC<LayoutProps> = ({
                 onClick={() => onTabChange(item.id)}
                 className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    ? 'bg-[var(--theme-primary)] text-white shadow-lg font-semibold'
+                    : 'opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'opacity-70'}`} />
                 <span>{item.label}</span>
               </button>
             );
@@ -163,68 +163,68 @@ export const Layout: React.FC<LayoutProps> = ({
 
         {/* Mini Live Status Widget */}
         {metrics && (
-          <div className="p-4 mx-3 mb-2 bg-slate-950/70 border border-slate-800/80 rounded-2xl space-y-2.5 text-xs">
-            <div className="flex items-center justify-between text-slate-400">
-              <span className="flex items-center space-x-1.5">
-                <Cpu className="w-3.5 h-3.5 text-blue-400" />
+          <div className="p-4 mx-3 mb-2 glass-card rounded-2xl space-y-2.5 text-xs">
+            <div className="flex items-center justify-between opacity-80">
+              <span className="flex items-center space-x-1.5 font-medium">
+                <Cpu className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
                 <span>CPU 负载</span>
               </span>
-              <span className="font-mono font-semibold text-slate-200">{metrics.cpu.usagePercent}%</span>
+              <span className="font-mono font-semibold">{metrics.cpu.usagePercent}%</span>
             </div>
-            <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 overflow-hidden border border-black/5 dark:border-white/5">
               <div
-                className="bg-blue-500 h-full rounded-full transition-all duration-300"
+                className="bg-[var(--theme-primary)] h-full rounded-full transition-all duration-300"
                 style={{ width: `${metrics.cpu.usagePercent}%` }}
               />
             </div>
 
-            <div className="flex items-center justify-between text-slate-400 pt-1">
-              <span className="flex items-center space-x-1.5">
-                <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="flex items-center justify-between opacity-80 pt-1">
+              <span className="flex items-center space-x-1.5 font-medium">
+                <HardDrive className="w-3.5 h-3.5 text-emerald-500" />
                 <span>内存占用</span>
               </span>
-              <span className="font-mono font-semibold text-slate-200">{metrics.memory.usagePercent}%</span>
+              <span className="font-mono font-semibold">{metrics.memory.usagePercent}%</span>
             </div>
-            <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 overflow-hidden border border-black/5 dark:border-white/5">
               <div
                 className="bg-emerald-500 h-full rounded-full transition-all duration-300"
                 style={{ width: `${metrics.memory.usagePercent}%` }}
               />
             </div>
 
-            <div className="pt-2 text-[11px] text-slate-500 flex items-center justify-between border-t border-slate-800/60">
+            <div className="pt-2 text-[11px] opacity-70 flex items-center justify-between border-t border-black/10 dark:border-white/10">
               <span>运行时间</span>
-              <span className="font-mono text-slate-400">{formatUptime(metrics.host.uptime)}</span>
+              <span className="font-mono">{formatUptime(metrics.host.uptime)}</span>
             </div>
           </div>
         )}
 
         {/* Version & Corner Badge */}
-        <div className="px-4 py-2 flex items-center justify-between text-[11px] text-slate-500 border-t border-slate-800/40">
-          <div className="flex items-center space-x-1.5 font-mono">
-            <GitBranch className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-400 font-semibold">{version}</span>
+        <div className="px-4 py-2 flex items-center justify-between text-[11px] opacity-75 border-t border-black/10 dark:border-white/10">
+          <div className="flex items-center space-x-1.5 font-mono font-semibold">
+            <GitBranch className="w-3.5 h-3.5 text-[var(--theme-primary)]" />
+            <span>{version}</span>
             {hasUpdate && (
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" title="发现新版本" />
             )}
           </div>
           <button
             onClick={() => onTabChange('settings')}
-            className="text-[10px] text-slate-400 hover:text-blue-400 transition underline"
+            className="text-[10px] hover:text-[var(--theme-primary)] transition underline"
           >
             {hasUpdate ? '可升级 ➔' : '版本更新'}
           </button>
         </div>
 
         {/* Bottom User Area */}
-        <div className="p-3 border-t border-slate-800/60 flex items-center justify-between">
+        <div className="p-3 border-t border-black/10 dark:border-white/10 flex items-center justify-between">
           <div className="flex items-center space-x-2.5 px-2 truncate">
-            <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs font-bold text-slate-300 shrink-0">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <div className="w-7 h-7 rounded-lg glass-card flex items-center justify-center text-xs font-bold shrink-0">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" />
             </div>
             <div className="truncate">
-              <p className="text-xs font-medium text-slate-200 truncate">{username}</p>
-              <p className="text-[10px] text-emerald-400 flex items-center space-x-1">
+              <p className="text-xs font-medium truncate">{username}</p>
+              <p className="text-[10px] text-emerald-500 flex items-center space-x-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
                 <span>在线</span>
               </p>
@@ -233,7 +233,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
           <button
             onClick={onLogout}
-            className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-xl transition-colors"
+            className="p-2 opacity-70 hover:opacity-100 hover:text-rose-500 rounded-xl transition-colors"
             title="退出登录"
           >
             <LogOut className="w-4 h-4" />
@@ -244,20 +244,20 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Main Content Area */}
       <div className="relative z-10 flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header with Theme Switcher & Appearance Slider */}
-        <header className="relative z-50 flex items-center justify-between px-6 py-3.5 glass-panel border-b border-slate-800/60 shrink-0">
+        <header className="relative z-50 flex items-center justify-between px-6 py-3.5 glass-panel border-b border-black/10 dark:border-white/10 shrink-0">
           <div className="flex items-center space-x-3">
             {/* Mobile menu trigger */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 text-slate-400 hover:text-white rounded-lg"
+              className="md:hidden p-2 opacity-75 hover:opacity-100 rounded-lg"
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             <div className="md:hidden flex items-center space-x-2">
-              <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+              <div className="w-7 h-7 rounded-lg bg-[var(--theme-primary)] flex items-center justify-center text-white">
                 <Server className="w-4 h-4" />
               </div>
-              <span className="font-bold text-sm text-white">CanyatNAS</span>
+              <span className="font-bold text-sm">CanyatNAS</span>
             </div>
           </div>
 
@@ -270,11 +270,11 @@ export const Layout: React.FC<LayoutProps> = ({
                   setIsAppearanceMenuOpen(!isAppearanceMenuOpen);
                   setIsThemeMenuOpen(false);
                 }}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl glass-card text-xs font-medium text-slate-300 hover:text-white hover:border-slate-600 transition"
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl glass-btn-secondary text-xs font-medium transition"
                 title="调节卡片透明度与磨砂质感"
               >
                 <Sliders className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">透明磨砂度 ({Math.round(appearance.cardOpacity * 100)}%)</span>
+                <span className="hidden sm:inline">透明磨砂 ({Math.round(appearance.cardOpacity * 100)}%)</span>
               </button>
 
               {isAppearanceMenuOpen && (
@@ -284,15 +284,15 @@ export const Layout: React.FC<LayoutProps> = ({
                     onClick={() => setIsAppearanceMenuOpen(false)}
                   />
 
-                  <div className="absolute right-0 mt-2 w-72 rounded-2xl glass-panel border border-slate-700/80 shadow-2xl p-4 space-y-3.5 z-[100] animate-in fade-in text-xs">
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-800">
-                      <span className="font-semibold text-slate-200">卡片质感微调</span>
+                  <div className="absolute right-0 mt-2 w-72 rounded-2xl glass-panel border border-black/15 dark:border-white/15 shadow-2xl p-4 space-y-3.5 z-[100] animate-in fade-in text-xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-black/10 dark:border-white/10">
+                      <span className="font-semibold">卡片质感微调</span>
                       <button
                         onClick={() => {
                           themeService.resetAppearance();
                           setAppearance(themeService.getAppearance());
                         }}
-                        className="text-[10px] text-blue-400 hover:underline flex items-center space-x-1"
+                        className="text-[10px] text-[var(--theme-primary)] hover:underline flex items-center space-x-1"
                       >
                         <RotateCcw className="w-3 h-3" />
                         <span>重置</span>
@@ -303,31 +303,31 @@ export const Layout: React.FC<LayoutProps> = ({
                     <div className="grid grid-cols-3 gap-1.5">
                       <button
                         onClick={() => {
-                          const val = { cardOpacity: 0.35, cardBlur: 20, bgMaskOpacity: 0.5 };
+                          const val = { cardOpacity: 0.25, cardBlur: 20, bgMaskOpacity: 0.45 };
                           themeService.setAppearance(val);
                           setAppearance(val);
                         }}
-                        className="py-1 px-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-[10px] text-center text-slate-300 transition"
+                        className="py-1 px-1.5 rounded-lg glass-btn-secondary text-[10px] text-center transition"
                       >
                         💎 晶莹超透
                       </button>
                       <button
                         onClick={() => {
-                          const val = { cardOpacity: 0.55, cardBlur: 16, bgMaskOpacity: 0.65 };
+                          const val = { cardOpacity: 0.45, cardBlur: 16, bgMaskOpacity: 0.60 };
                           themeService.setAppearance(val);
                           setAppearance(val);
                         }}
-                        className="py-1 px-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 text-[10px] text-center text-blue-300 transition font-medium"
+                        className="py-1 px-1.5 rounded-lg bg-[var(--theme-primary)]/20 border border-[var(--theme-primary)]/40 text-[var(--theme-primary)] text-[10px] text-center transition font-semibold"
                       >
                         ✨ 优雅磨砂
                       </button>
                       <button
                         onClick={() => {
-                          const val = { cardOpacity: 0.8, cardBlur: 10, bgMaskOpacity: 0.8 };
+                          const val = { cardOpacity: 0.75, cardBlur: 10, bgMaskOpacity: 0.75 };
                           themeService.setAppearance(val);
                           setAppearance(val);
                         }}
-                        className="py-1 px-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-[10px] text-center text-slate-300 transition"
+                        className="py-1 px-1.5 rounded-lg glass-btn-secondary text-[10px] text-center transition"
                       >
                         🎯 舒适平衡
                       </button>
@@ -335,13 +335,13 @@ export const Layout: React.FC<LayoutProps> = ({
 
                     {/* Slider 1: Card Opacity */}
                     <div className="space-y-1.5">
-                      <div className="flex justify-between text-slate-300">
+                      <div className="flex justify-between opacity-85">
                         <span>卡片透明度</span>
-                        <span className="font-mono text-blue-400 font-bold">{Math.round(appearance.cardOpacity * 100)}%</span>
+                        <span className="font-mono text-[var(--theme-primary)] font-bold">{Math.round(appearance.cardOpacity * 100)}%</span>
                       </div>
                       <input
                         type="range"
-                        min="0.2"
+                        min="0.10"
                         max="0.95"
                         step="0.05"
                         value={appearance.cardOpacity}
@@ -350,13 +350,13 @@ export const Layout: React.FC<LayoutProps> = ({
                           themeService.setAppearance({ cardOpacity: val });
                           setAppearance(prev => ({ ...prev, cardOpacity: val }));
                         }}
-                        className="w-full accent-blue-500 cursor-pointer"
+                        className="w-full accent-[var(--theme-primary)] cursor-pointer"
                       />
                     </div>
 
                     {/* Slider 2: Blur */}
                     <div className="space-y-1.5">
-                      <div className="flex justify-between text-slate-300">
+                      <div className="flex justify-between opacity-85">
                         <span>毛玻璃虚化</span>
                         <span className="font-mono text-purple-400 font-bold">{appearance.cardBlur}px</span>
                       </div>
@@ -377,13 +377,13 @@ export const Layout: React.FC<LayoutProps> = ({
 
                     {/* Slider 3: Mask Dimming */}
                     <div className="space-y-1.5">
-                      <div className="flex justify-between text-slate-300">
+                      <div className="flex justify-between opacity-85">
                         <span>背景壁纸遮罩</span>
                         <span className="font-mono text-pink-400 font-bold">{Math.round(appearance.bgMaskOpacity * 100)}%</span>
                       </div>
                       <input
                         type="range"
-                        min="0.2"
+                        min="0.10"
                         max="0.95"
                         step="0.05"
                         value={appearance.bgMaskOpacity}
@@ -407,13 +407,13 @@ export const Layout: React.FC<LayoutProps> = ({
                   setIsThemeMenuOpen(!isThemeMenuOpen);
                   setIsAppearanceMenuOpen(false);
                 }}
-                className="flex items-center space-x-2 px-3 py-1.5 rounded-xl glass-card text-xs font-medium text-slate-200 hover:border-slate-600 transition"
+                className="flex items-center space-x-2 px-3 py-1.5 rounded-xl glass-btn-secondary text-xs font-medium transition"
               >
                 {getThemeIcon(currentTheme)}
                 <span className="hidden sm:inline">
                   {THEME_PRESETS.find(p => p.id === currentTheme)?.name || '主题'}
                 </span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <ChevronDown className="w-3.5 h-3.5 opacity-60" />
               </button>
 
               {isThemeMenuOpen && (
@@ -424,9 +424,9 @@ export const Layout: React.FC<LayoutProps> = ({
                   />
 
                   <div
-                    className="absolute right-0 mt-2 w-52 rounded-2xl glass-panel border border-slate-700/80 shadow-2xl p-1.5 space-y-1 z-[100] animate-in fade-in"
+                    className="absolute right-0 mt-2 w-52 rounded-2xl glass-panel border border-black/15 dark:border-white/15 shadow-2xl p-1.5 space-y-1 z-[100] animate-in fade-in"
                   >
-                    <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <div className="px-3 py-1.5 text-[10px] font-semibold opacity-60 uppercase tracking-wider">
                       切换界面主题
                     </div>
                     {THEME_PRESETS.map((preset) => (
@@ -438,8 +438,8 @@ export const Layout: React.FC<LayoutProps> = ({
                         }}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition ${
                           currentTheme === preset.id
-                            ? 'bg-blue-600 text-white font-medium shadow-md shadow-blue-600/30'
-                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                            ? 'bg-[var(--theme-primary)] text-white font-semibold shadow-md'
+                            : 'opacity-75 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/5'
                         }`}
                       >
                         <div className="flex items-center space-x-2">
@@ -458,7 +458,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
         {/* Mobile menu dropdown */}
         {isMobileMenuOpen && (
-          <div className="md:hidden glass-panel border-b border-slate-800 px-3 py-2 space-y-1 z-30">
+          <div className="md:hidden glass-panel border-b border-black/10 dark:border-white/10 px-3 py-2 space-y-1 z-30">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentTab === item.id;
@@ -470,7 +470,7 @@ export const Layout: React.FC<LayoutProps> = ({
                     setIsMobileMenuOpen(false);
                   }}
                   className={`w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-sm ${
-                    isActive ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'
+                    isActive ? 'bg-[var(--theme-primary)] text-white font-semibold' : 'opacity-70 hover:opacity-100'
                   }`}
                 >
                   <Icon className="w-4 h-4" />

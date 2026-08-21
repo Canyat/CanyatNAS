@@ -13,7 +13,13 @@ import {
   RefreshCw,
   Clock,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
+  Network,
+  Shield
 } from 'lucide-react';
 import { SystemMetrics } from '../types';
 import { MetricCard } from '../components/MetricCard';
@@ -32,6 +38,49 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
   const [netTxHistory, setNetTxHistory] = useState<number[]>([]);
   const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hideIpPrivacy, setHideIpPrivacy] = useState<boolean>(() => {
+    return localStorage.getItem('canyat_hide_network_ip') === 'true';
+  });
+  const [copiedIp, setCopiedIp] = useState<string | null>(null);
+
+  const toggleIpPrivacy = () => {
+    setHideIpPrivacy(prev => {
+      const next = !prev;
+      localStorage.setItem('canyat_hide_network_ip', String(next));
+      return next;
+    });
+  };
+
+  const handleCopyIp = (ip: string) => {
+    if (!ip) return;
+    navigator.clipboard.writeText(ip);
+    setCopiedIp(ip);
+    setTimeout(() => setCopiedIp(null), 2000);
+  };
+
+  const maskIp = (ip: string) => {
+    if (!ip || ip === '127.0.0.1' || ip === '::1') return ip;
+    if (ip.includes('.')) {
+      const parts = ip.split('.');
+      if (parts.length === 4) {
+        return `${parts[0]}.${parts[1]}.***.***`;
+      }
+    }
+    if (ip.includes(':')) {
+      const parts = ip.split(':');
+      return `${parts[0]}:****:****:${parts[parts.length - 1]}`;
+    }
+    return '••••••••';
+  };
+
+  const maskMac = (mac: string) => {
+    if (!mac) return '';
+    const parts = mac.split(/[:-]/);
+    if (parts.length >= 6) {
+      return `${parts[0]}:${parts[1]}:••:••:••:${parts[5]}`;
+    }
+    return '••:••:••:••:••:••';
+  };
 
   useEffect(() => {
     // Initial fetch
@@ -106,8 +155,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
   if (!metrics) {
     return (
       <div className="flex flex-col items-center justify-center h-96 space-y-4">
-        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-        <p className="text-sm text-slate-400 font-medium">正在读取主机硬件与系统监控数据...</p>
+        <div className="w-12 h-12 border-4 border-[var(--theme-primary)]/20 border-t-[var(--theme-primary)] rounded-full animate-spin"></div>
+        <p className="text-sm opacity-75 font-medium">正在读取主机硬件与系统监控数据...</p>
       </div>
     );
   }
@@ -118,7 +167,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <h2 className="text-xl font-bold tracking-tight text-white flex items-center space-x-2">
+            <h2 className="text-xl font-bold tracking-tight flex items-center space-x-2">
               <span>硬件监控与系统全景</span>
             </h2>
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -126,8 +175,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
               实时流连接
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            {metrics.host.os} • {metrics.host.kernel} • 主机名: <span className="text-slate-300 font-mono">{metrics.host.hostname}</span>
+          <p className="text-xs opacity-75 mt-1">
+            {metrics.host.os} • {metrics.host.kernel} • 主机名: <span className="font-mono font-medium">{metrics.host.hostname}</span>
           </p>
         </div>
 
@@ -135,7 +184,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
         <div className="flex items-center space-x-2.5">
           <button
             onClick={handleRefresh}
-            className="p-2 rounded-xl glass-card text-slate-300 hover:text-white transition"
+            className="p-2 rounded-xl glass-btn-secondary transition"
             title="刷新数据"
           >
             <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -143,7 +192,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
 
           <button
             onClick={handleReboot}
-            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl glass-card text-amber-300 hover:bg-amber-500/20 text-xs font-semibold transition"
+            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl glass-card text-amber-400 hover:bg-amber-500/20 text-xs font-semibold transition"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>重启系统</span>
@@ -151,7 +200,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
 
           <button
             onClick={handleShutdown}
-            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl glass-card text-rose-300 hover:bg-rose-500/20 text-xs font-semibold transition"
+            className="flex items-center space-x-1.5 px-3 py-2 rounded-xl glass-card text-rose-400 hover:bg-rose-500/20 text-xs font-semibold transition"
           >
             <Power className="w-3.5 h-3.5" />
             <span>安全关机</span>
@@ -162,7 +211,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
       {/* Action Notification */}
       {actionMessage && (
         <div className={`p-4 rounded-2xl border flex items-center justify-between glass-card ${
-          actionMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+          actionMessage.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
         }`}>
           <div className="flex items-center space-x-2 text-xs">
             {actionMessage.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <AlertTriangle className="w-4 h-4 text-rose-400" />}
@@ -229,23 +278,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
         {/* CPU Cores Distribution */}
         <div className="glass-card rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white flex items-center space-x-2">
+            <h3 className="text-sm font-semibold flex items-center space-x-2">
               <Cpu className="w-4 h-4 text-[var(--theme-primary)]" />
               <span>多核心负载分布</span>
             </h3>
-            <span className="text-xs text-slate-400 font-mono">{metrics.cpu.cores.length} Cores</span>
+            <span className="text-xs opacity-75 font-mono">{metrics.cpu.cores.length} Cores</span>
           </div>
 
           <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
             {metrics.cpu.cores.map((load, idx) => (
               <div key={idx} className="space-y-1">
                 <div className="flex justify-between text-xs font-mono">
-                  <span className="text-slate-400">Core #{idx}</span>
-                  <span className={load > 80 ? 'text-rose-400 font-semibold' : load > 50 ? 'text-amber-400' : 'text-slate-200'}>
+                  <span className="opacity-75">Core #{idx}</span>
+                  <span className={load > 80 ? 'text-rose-400 font-semibold' : load > 50 ? 'text-amber-400' : 'opacity-90'}>
                     {load}%
                   </span>
                 </div>
-                <div className="w-full bg-black/30 rounded-full h-1.5 overflow-hidden border border-white/5">
+                <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 overflow-hidden border border-black/5 dark:border-white/5">
                   <div
                     className={`h-full rounded-full transition-all duration-300 ${
                       load > 80 ? 'bg-rose-500' : load > 50 ? 'bg-amber-500' : 'bg-[var(--theme-primary)]'
@@ -257,20 +306,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
             ))}
           </div>
 
-          <div className="pt-2 border-t border-white/10 text-[11px] text-slate-400 truncate">
-            <span className="text-slate-500">处理器型号: </span>
-            <span className="text-slate-200 font-medium">{metrics.cpu.model}</span>
+          <div className="pt-2 border-t border-black/10 dark:border-white/10 text-[11px] opacity-75 truncate">
+            <span className="opacity-60">处理器型号: </span>
+            <span className="font-medium">{metrics.cpu.model}</span>
           </div>
         </div>
 
         {/* Disk Mount Points Grouped by System Disk vs Data Disk */}
         <div className="lg:col-span-2 glass-card rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white flex items-center space-x-2">
+            <h3 className="text-sm font-semibold flex items-center space-x-2">
               <HardDrive className="w-4 h-4 text-purple-400" />
               <span>存储硬盘与分区（区分系统盘与挂载盘）</span>
             </h3>
-            <span className="text-xs text-slate-400 font-mono">
+            <span className="text-xs opacity-75 font-mono">
               {metrics.disks.filter(d => d.isSystem || d.driveType === 'system').length} 系统盘 • {metrics.disks.filter(d => !d.isSystem && d.driveType !== 'system').length} 数据挂载盘
             </span>
           </div>
@@ -283,20 +332,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                 <span>系统主盘 (System OS Disk)</span>
               </div>
               {metrics.disks.filter(d => d.isSystem || d.driveType === 'system').map((disk, idx) => (
-                <div key={idx} className="p-3.5 bg-[var(--theme-primary)]/10 rounded-xl border border-[var(--theme-primary)]/30 space-y-2 hover:border-[var(--theme-primary)]/50 transition">
+                <div key={idx} className="p-3.5 glass-inner rounded-xl border border-[var(--theme-primary)]/30 space-y-2 hover:border-[var(--theme-primary)]/60 transition">
                   <div className="flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-2.5">
-                      <span className="font-mono font-bold text-white px-2 py-0.5 rounded bg-[var(--theme-primary)]/25 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30">
+                      <span className="font-mono font-bold px-2 py-0.5 rounded bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] border border-[var(--theme-primary)]/30">
                         {disk.mount}
                       </span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--theme-primary)]/20 text-[var(--theme-primary)] font-medium">系统盘 OS</span>
-                      <span className="text-[11px] text-slate-400">{disk.filesystem}</span>
+                      <span className="text-[11px] opacity-75">{disk.filesystem}</span>
                     </div>
-                    <div className="flex items-center space-x-3 font-mono text-slate-300">
+                    <div className="flex items-center space-x-3 font-mono">
                       <div>
-                        <span className="text-slate-400 text-[11px]">已用: </span>
-                        <span className="font-bold text-white">{formatBytes(disk.used)}</span>
-                        <span className="text-slate-500 text-[11px]"> / {formatBytes(disk.total)}</span>
+                        <span className="opacity-60 text-[11px]">已用: </span>
+                        <span className="font-bold">{formatBytes(disk.used)}</span>
+                        <span className="opacity-60 text-[11px]"> / {formatBytes(disk.total)}</span>
                         <span className="ml-1.5 font-bold text-[var(--theme-primary)]">({disk.usagePercent}%)</span>
                       </div>
                       {onNavigateTab && (
@@ -310,7 +359,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                     </div>
                   </div>
 
-                  <div className="w-full bg-black/30 rounded-full h-2 overflow-hidden border border-white/5">
+                  <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-2 overflow-hidden border border-black/5 dark:border-white/5">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${
                         disk.usagePercent > 85 ? 'bg-rose-500' : disk.usagePercent > 70 ? 'bg-amber-500' : 'bg-[var(--theme-primary)]'
@@ -319,7 +368,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono pt-1">
+                  <div className="flex items-center justify-between text-[11px] opacity-75 font-mono pt-1">
                     <span>剩余可用: {formatBytes(disk.free)}</span>
                     <span>I/O 吞吐: {formatSpeed(disk.readSpeed)} 读 • {formatSpeed(disk.writeSpeed)} 写</span>
                   </div>
@@ -334,31 +383,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                 <span>数据盘与挂载存储 (Data & Mounted Disks)</span>
               </div>
               {metrics.disks.filter(d => !d.isSystem && d.driveType !== 'system').length === 0 ? (
-                <div className="p-3 bg-black/20 rounded-xl border border-white/5 text-center text-xs text-slate-500">
+                <div className="p-3 glass-inner rounded-xl text-center text-xs opacity-60">
                   暂无独立挂载数据盘，所有数据存储于系统主分区中
                 </div>
               ) : (
                 metrics.disks.filter(d => !d.isSystem && d.driveType !== 'system').map((disk, idx) => (
-                  <div key={idx} className="p-3.5 bg-white/5 rounded-xl border border-white/10 space-y-2 hover:border-purple-500/40 transition">
+                  <div key={idx} className="p-3.5 glass-inner rounded-xl border border-black/10 dark:border-white/10 space-y-2 hover:border-purple-500/50 transition">
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center space-x-2.5">
-                        <span className="font-mono font-bold text-white px-2 py-0.5 rounded bg-purple-900/40 text-purple-300 border border-purple-700/40">
+                        <span className="font-mono font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">
                           {disk.mount}
                         </span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-medium">数据盘 Data</span>
-                        <span className="text-[11px] text-slate-400">{disk.filesystem}</span>
+                        <span className="text-[11px] opacity-75">{disk.filesystem}</span>
                       </div>
-                      <div className="flex items-center space-x-3 font-mono text-slate-300">
+                      <div className="flex items-center space-x-3 font-mono">
                         <div>
-                          <span className="text-slate-400 text-[11px]">已用: </span>
-                          <span className="font-bold text-white">{formatBytes(disk.used)}</span>
-                          <span className="text-slate-500 text-[11px]"> / {formatBytes(disk.total)}</span>
+                          <span className="opacity-60 text-[11px]">已用: </span>
+                          <span className="font-bold">{formatBytes(disk.used)}</span>
+                          <span className="opacity-60 text-[11px]"> / {formatBytes(disk.total)}</span>
                           <span className="ml-1.5 font-bold text-purple-400">({disk.usagePercent}%)</span>
                         </div>
                         {onNavigateTab && (
                           <button
                             onClick={() => onNavigateTab('files')}
-                            className="px-2.5 py-1 rounded bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white text-[11px] font-sans font-medium transition"
+                            className="px-2.5 py-1 rounded bg-purple-600/20 hover:bg-purple-600 text-purple-400 hover:text-white text-[11px] font-sans font-medium transition"
                           >
                             打开目录
                           </button>
@@ -366,7 +415,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                       </div>
                     </div>
 
-                    <div className="w-full bg-black/30 rounded-full h-2 overflow-hidden border border-white/5">
+                    <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-2 overflow-hidden border border-black/5 dark:border-white/5">
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${
                           disk.usagePercent > 85 ? 'bg-rose-500' : disk.usagePercent > 70 ? 'bg-amber-500' : 'bg-purple-500'
@@ -375,7 +424,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
                       />
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono pt-1">
+                    <div className="flex items-center justify-between text-[11px] opacity-75 font-mono pt-1">
                       <span>剩余可用: {formatBytes(disk.free)}</span>
                       <span>I/O 吞吐: {formatSpeed(disk.readSpeed)} 读 • {formatSpeed(disk.writeSpeed)} 写</span>
                     </div>
@@ -389,70 +438,134 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) =
 
       {/* Bottom Section: Network Interfaces & System Specs */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Network Interfaces */}
+        {/* Network Interfaces with Privacy Protection */}
         <div className="glass-card rounded-2xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white flex items-center space-x-2">
-              <ArrowUpRight className="w-4 h-4 text-amber-400" />
-              <span>网络接口与实时带宽</span>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold flex items-center space-x-2">
+              <Network className="w-4 h-4 text-amber-400" />
+              <span>网络网卡与 IP 地址 ({metrics.network.interfaces.length})</span>
             </h3>
-            <span className="text-xs text-slate-400">
-              总计: ↓ {formatSpeed(metrics.network.totalRxSpeed)} • ↑ {formatSpeed(metrics.network.totalTxSpeed)}
-            </span>
+            
+            <div className="flex items-center space-x-2">
+              {/* Privacy Mask Toggle Button */}
+              <button
+                onClick={toggleIpPrivacy}
+                className={`flex items-center space-x-1 px-2.5 py-1 rounded-xl text-xs font-medium transition-all ${
+                  hideIpPrivacy
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow-sm'
+                    : 'glass-btn-secondary'
+                }`}
+                title={hideIpPrivacy ? '点击取消隐藏，显示完整 IP' : '点击一键隐藏 IP 保护隐私'}
+              >
+                {hideIpPrivacy ? <EyeOff className="w-3.5 h-3.5 text-amber-400" /> : <Eye className="w-3.5 h-3.5 opacity-70" />}
+                <span>{hideIpPrivacy ? '隐私保护中' : '一键隐藏 IP'}</span>
+              </button>
+
+              <span className="text-[11px] opacity-75 font-mono hidden sm:inline">
+                ↓ {formatSpeed(metrics.network.totalRxSpeed)} • ↑ {formatSpeed(metrics.network.totalTxSpeed)}
+              </span>
+            </div>
           </div>
 
-          <div className="space-y-2.5 max-h-56 overflow-y-auto">
-            {metrics.network.interfaces.map((iface, idx) => (
-              <div key={idx} className="p-3 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between text-xs hover:border-amber-500/30 transition">
-                <div className="space-y-0.5">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono font-bold text-slate-200">{iface.name}</span>
-                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 font-mono">
-                      {iface.ip}
-                    </span>
-                  </div>
-                  {iface.mac && <p className="text-[10px] text-slate-500 font-mono">MAC: {iface.mac}</p>}
-                </div>
+          <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
+            {metrics.network.interfaces.map((iface, idx) => {
+              const isCopied = copiedIp === iface.ip;
+              const displayIp = hideIpPrivacy ? maskIp(iface.ip) : iface.ip;
+              const displayIpv6 = iface.ipv6 ? (hideIpPrivacy ? maskIp(iface.ipv6) : iface.ipv6) : null;
+              const displayMac = hideIpPrivacy ? maskMac(iface.mac) : iface.mac;
 
-                <div className="text-right font-mono space-y-0.5">
-                  <div className="text-emerald-400 font-medium">↓ {formatSpeed(iface.rxSpeed)}</div>
-                  <div className="text-[var(--theme-primary)] font-medium">↑ {formatSpeed(iface.txSpeed)}</div>
+              return (
+                <div
+                  key={idx}
+                  className="p-3 glass-inner rounded-xl border border-black/10 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs hover:border-amber-500/40 transition"
+                >
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-mono font-bold">{iface.name}</span>
+                      {iface.type && (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/15 text-blue-400 font-medium">
+                          {iface.type}
+                        </span>
+                      )}
+                      {iface.internal && (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded glass-card opacity-60">
+                          回环
+                        </span>
+                      )}
+                    </div>
+
+                    {/* IP & MAC Badges */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center space-x-1.5 bg-amber-500/15 text-amber-400 px-2 py-0.5 rounded-lg font-mono text-[11px]">
+                        <span className="opacity-75 text-[10px]">IPv4:</span>
+                        <span className="font-semibold">{displayIp}</span>
+                        {!hideIpPrivacy && iface.ip && iface.ip !== '127.0.0.1' && (
+                          <button
+                            onClick={() => handleCopyIp(iface.ip)}
+                            className="p-0.5 hover:text-white transition"
+                            title="复制 IPv4"
+                          >
+                            {isCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          </button>
+                        )}
+                      </div>
+
+                      {displayIpv6 && (
+                        <div className="flex items-center space-x-1 glass-card px-2 py-0.5 rounded-lg font-mono text-[10px] opacity-80 truncate max-w-[200px]" title={iface.ipv6}>
+                          <span className="opacity-60 text-[9px]">IPv6:</span>
+                          <span className="truncate">{displayIpv6}</span>
+                        </div>
+                      )}
+
+                      {displayMac && (
+                        <span className="text-[10px] opacity-60 font-mono">
+                          MAC: {displayMac}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bandwidth Speed */}
+                  <div className="text-right font-mono text-xs flex sm:flex-col justify-between sm:justify-center items-end shrink-0 pt-1 sm:pt-0 border-t sm:border-t-0 border-black/5 dark:border-white/5">
+                    <div className="text-emerald-400 font-medium text-[11px]">↓ {formatSpeed(iface.rxSpeed)}</div>
+                    <div className="text-[var(--theme-primary)] font-medium text-[11px]">↑ {formatSpeed(iface.txSpeed)}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         {/* System Specs */}
         <div className="glass-card rounded-2xl p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-white flex items-center space-x-2">
+          <h3 className="text-sm font-semibold flex items-center space-x-2">
             <Server className="w-4 h-4 text-[var(--theme-primary)]" />
             <span>主机与系统环境</span>
           </h3>
 
           <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-1">
-              <span className="text-slate-500">主机名称</span>
-              <p className="font-semibold text-slate-200 truncate">{metrics.host.hostname}</p>
+            <div className="p-3 glass-inner rounded-xl border border-black/10 dark:border-white/10 space-y-1">
+              <span className="opacity-60">主机名称</span>
+              <p className="font-semibold truncate">{metrics.host.hostname}</p>
             </div>
 
-            <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-1">
-              <span className="text-slate-500">操作系统</span>
-              <p className="font-semibold text-slate-200 truncate">{metrics.host.os}</p>
+            <div className="p-3 glass-inner rounded-xl border border-black/10 dark:border-white/10 space-y-1">
+              <span className="opacity-60">操作系统</span>
+              <p className="font-semibold truncate">{metrics.host.os}</p>
             </div>
 
-            <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-1">
-              <span className="text-slate-500">系统内核</span>
-              <p className="font-semibold text-slate-200 font-mono truncate">{metrics.host.kernel}</p>
+            <div className="p-3 glass-inner rounded-xl border border-black/10 dark:border-white/10 space-y-1">
+              <span className="opacity-60">系统内核</span>
+              <p className="font-semibold font-mono truncate">{metrics.host.kernel}</p>
             </div>
 
-            <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-1">
-              <span className="text-slate-500">CPU 架构</span>
-              <p className="font-semibold text-slate-200 font-mono">{metrics.host.arch}</p>
+            <div className="p-3 glass-inner rounded-xl border border-black/10 dark:border-white/10 space-y-1">
+              <span className="opacity-60">CPU 架构</span>
+              <p className="font-semibold font-mono">{metrics.host.arch}</p>
             </div>
           </div>
 
-          <div className="p-3 bg-[var(--theme-primary)]/10 rounded-xl border border-[var(--theme-primary)]/25 flex items-center justify-between text-xs text-slate-200">
+          <div className="p-3 glass-inner rounded-xl border border-[var(--theme-primary)]/30 flex items-center justify-between text-xs">
             <span className="flex items-center space-x-1.5 text-[var(--theme-primary)] font-medium">
               <Clock className="w-4 h-4" />
               <span>系统连续运行时间</span>

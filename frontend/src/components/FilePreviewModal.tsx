@@ -62,17 +62,17 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-      <div className="flex flex-col bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl h-[85vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
+      <div className="flex flex-col glass-panel rounded-2xl shadow-2xl w-full max-w-5xl h-[85vh] overflow-hidden">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 bg-slate-900 border-b border-slate-800">
+        <div className="flex items-center justify-between px-5 py-3.5 glass-inner border-b border-black/10 dark:border-white/10">
           <div className="flex items-center space-x-3 truncate">
-            <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl">
+            <div className="p-2 bg-blue-500/15 text-blue-400 rounded-xl">
               {isTextOrCode ? <Code className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
             </div>
             <div className="truncate">
-              <h3 className="font-semibold text-sm text-slate-200 truncate">{file.name}</h3>
-              <p className="text-xs text-slate-400 font-mono">{(file.size / 1024 / 1024).toFixed(2)} MB • {file.mimeType}</p>
+              <h3 className="font-semibold text-sm truncate">{file.name}</h3>
+              <p className="text-xs opacity-70 font-mono">{(file.size / 1024 / 1024).toFixed(2)} MB • {file.mimeType}</p>
             </div>
           </div>
 
@@ -81,7 +81,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
               <button
                 onClick={handleSaveText}
                 disabled={isSaving}
-                className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors shadow-lg shadow-blue-500/20"
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-[var(--theme-primary)] hover:opacity-90 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors shadow-lg"
               >
                 {saveSuccess ? <Check className="w-3.5 h-3.5 text-emerald-300" /> : <Save className="w-3.5 h-3.5" />}
                 <span>{saveSuccess ? '已保存!' : isSaving ? '保存中...' : '保存更改'}</span>
@@ -89,24 +89,24 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
             )}
 
             {isImage && (
-              <div className="flex items-center space-x-1 bg-slate-800 rounded-lg p-0.5">
+              <div className="flex items-center space-x-1 glass-inner rounded-lg p-0.5">
                 <button
                   onClick={() => setImageScale(s => Math.min(3, s + 0.25))}
-                  className="p-1 text-slate-300 hover:text-white rounded"
+                  className="p-1 opacity-70 hover:opacity-100 rounded"
                   title="放大"
                 >
                   <ZoomIn className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setImageScale(s => Math.max(0.5, s - 0.25))}
-                  className="p-1 text-slate-300 hover:text-white rounded"
+                  className="p-1 opacity-70 hover:opacity-100 rounded"
                   title="缩小"
                 >
                   <ZoomOut className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setImageRotation(r => (r + 90) % 360)}
-                  className="p-1 text-slate-300 hover:text-white rounded"
+                  className="p-1 opacity-70 hover:opacity-100 rounded"
                   title="旋转"
                 >
                   <RotateCw className="w-4 h-4" />
@@ -117,7 +117,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
             <a
               href={downloadUrl}
               download={file.name}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-colors"
+              className="flex items-center space-x-1.5 px-3 py-1.5 glass-btn-secondary text-xs font-medium rounded-lg transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               <span>下载</span>
@@ -125,7 +125,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors ml-2"
+              className="p-1.5 opacity-70 hover:opacity-100 hover:bg-black/10 dark:hover:bg-white/10 rounded-lg transition-colors ml-2"
             >
               <X className="w-4 h-4" />
             </button>
@@ -133,7 +133,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 bg-slate-950 overflow-auto flex items-center justify-center p-4">
+        <div className="flex-1 glass-card overflow-auto flex items-center justify-center p-4">
           {/* Video Player */}
           {isVideo && (
             <div className="w-full h-full flex items-center justify-center bg-black rounded-xl overflow-hidden">
@@ -150,12 +150,12 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
 
           {/* Audio Player */}
           {isAudio && (
-            <div className="flex flex-col items-center justify-center p-8 bg-slate-900/60 rounded-2xl border border-slate-800 w-full max-w-md">
-              <div className="w-24 h-24 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center mb-6 shadow-inner animate-pulse-slow">
+            <div className="flex flex-col items-center justify-center p-8 glass-panel rounded-2xl w-full max-w-md">
+              <div className="w-24 h-24 rounded-full bg-blue-500/15 text-blue-400 flex items-center justify-center mb-6 shadow-inner animate-pulse-slow">
                 <Play className="w-10 h-10 ml-1" />
               </div>
-              <h4 className="text-base font-semibold text-white mb-2 text-center">{file.name}</h4>
-              <p className="text-xs text-slate-400 mb-6 font-mono">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+              <h4 className="text-base font-semibold mb-2 text-center">{file.name}</h4>
+              <p className="text-xs opacity-70 mb-6 font-mono">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
               <audio src={previewUrl} controls autoPlay className="w-full" />
             </div>
           )}
@@ -178,23 +178,23 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
           {isPdf && (
             <iframe
               src={previewUrl}
-              className="w-full h-full rounded-xl border border-slate-800 bg-white"
+              className="w-full h-full rounded-xl border border-black/10 dark:border-white/10 bg-white"
               title={file.name}
             />
           )}
 
           {/* Text / Code Editor */}
           {isTextOrCode && (
-            <div className="w-full h-full flex flex-col bg-slate-950 rounded-xl border border-slate-800 overflow-hidden font-mono">
+            <div className="w-full h-full flex flex-col glass-card rounded-xl overflow-hidden font-mono">
               {isLoadingText ? (
-                <div className="flex-1 flex items-center justify-center text-slate-500">
+                <div className="flex-1 flex items-center justify-center opacity-60">
                   <span>正在加载文件内容...</span>
                 </div>
               ) : (
                 <textarea
                   value={textContent}
                   onChange={(e) => setTextContent(e.target.value)}
-                  className="w-full h-full p-4 bg-slate-950 text-slate-200 text-xs sm:text-sm font-mono leading-relaxed resize-none focus:outline-none selection:bg-blue-500 selection:text-white"
+                  className="w-full h-full p-4 bg-transparent text-xs sm:text-sm font-mono leading-relaxed resize-none focus:outline-none selection:bg-[var(--theme-primary)] selection:text-white"
                   spellCheck={false}
                   placeholder="文件为空..."
                 />
@@ -205,17 +205,17 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
           {/* Unsupported preview */}
           {!isVideo && !isAudio && !isImage && !isPdf && !isTextOrCode && (
             <div className="text-center p-8">
-              <div className="w-16 h-16 rounded-2xl bg-slate-800 text-slate-400 flex items-center justify-center mx-auto mb-4">
-                <AlertCircle className="w-8 h-8" />
+              <div className="w-16 h-16 rounded-2xl glass-inner flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-8 h-8 opacity-60" />
               </div>
-              <h4 className="text-base font-semibold text-slate-200 mb-2">该格式暂不支持在线预览</h4>
-              <p className="text-xs text-slate-400 mb-6 font-mono">
+              <h4 className="text-base font-semibold mb-2">该格式暂不支持在线预览</h4>
+              <p className="text-xs opacity-70 mb-6 font-mono">
                 文件大小: {(file.size / 1024 / 1024).toFixed(2)} MB ({file.extension})
               </p>
               <a
                 href={downloadUrl}
                 download={file.name}
-                className="inline-flex items-center space-x-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-blue-500/20"
+                className="inline-flex items-center space-x-2 px-5 py-2.5 bg-[var(--theme-primary)] hover:opacity-90 text-white text-sm font-medium rounded-xl transition-colors shadow-lg"
               >
                 <Download className="w-4 h-4" />
                 <span>直接下载文件</span>

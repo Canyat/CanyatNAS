@@ -2,14 +2,14 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-v1.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.3.0-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20NAS%20%7C%20Linux%20%7C%20macOS%20%7C%20Docker-brightgreen.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3Dv18.0.0-orange.svg)
 ![License](https://img.shields.io/badge/license-MIT-purple.svg)
 
 **通用型轻量高效 NAS 控制面板系统，原生兼容 Windows NAS（Win10/11/Server）、Linux（Ubuntu/Debian/CentOS）、迷你主机 (Mini PC)、软路由、NUC、家用服务器与 MCSManager**
 
-[✨ 核心特性](#-核心功能特性) • [⚡ Windows 快速上手](#-windows-nas-快速上手) • [🐧 Linux 快速上手](#-linux--ubuntu-部署指南) • [🐳 Docker 部署](#-docker-部署) • [🎨 视觉主题](#-5-大精美主题系统)
+[✨ 核心特性](#-核心功能特性) • [⚡ Windows 快速上手](#-windows-nas-快速上手) • [🐧 Linux 快速上手](#-linux-部署指南) • [🐳 Docker 部署](#-docker-部署) • [🎨 视觉主题](#-5-大精美主题系统)
 
 </div>
 
@@ -91,7 +91,7 @@
 
 ### 9. 👤 账户安全与 GitHub 在线自动更新
 - **账户修改**：在设置页中自由修改管理员用户名与登录密码。
-- **角落版本号与在线升级**：页面左下角实时显示当前系统版本（`v1.2.0`），在线检测 GitHub Releases 新版本，发现更新时动态红点提醒并支持一键拉取代码升级。
+- **角落版本号与在线升级**：页面左下角实时显示当前系统版本（`v1.3.0`），在线检测 GitHub Releases 新版本，发现更新时动态红点提醒并支持一键拉取代码升级。
 
 ---
 
@@ -110,7 +110,7 @@
 
 ---
 
-## 🐧 Linux / Ubuntu 部署指南
+## 🐧 Linux 部署指南 (Ubuntu / Debian / CentOS / macOS)
 
 ### 选项 A：一键脚本免配置启动
 ```bash

@@ -249,26 +249,86 @@ class SystemService {
                     driveType
                 };
             });
-            // Network
+            // Network - Comprehensive interface gathering via os.networkInterfaces() & si.networkStats()
             let totalRxSpeed = 0;
             let totalTxSpeed = 0;
-            const interfaces = (Array.isArray(networkStats) && networkStats.length > 0 ? networkStats : [
-                { iface: 'eth0', rx_bytes: 1024 * 1024 * 100, tx_bytes: 1024 * 1024 * 50, rx_sec: 0, tx_sec: 0 }
-            ]).map(stat => {
-                const ifaceMeta = ifaceMap.get(stat.iface) || {};
+            const statMap = new Map();
+            if (Array.isArray(networkStats)) {
+                for (const s of networkStats) {
+                    if (s && s.iface) {
+                        statMap.set(s.iface, s);
+                    }
+                }
+            }
+            const osIfaces = os_1.default.networkInterfaces();
+            const allIfaceNames = new Set([
+                ...Object.keys(osIfaces),
+                ...ifaceMap.keys(),
+                ...statMap.keys()
+            ]);
+            const interfaces = [];
+            for (const name of allIfaceNames) {
+                if (!name)
+                    continue;
+                const osDetails = osIfaces[name] || [];
+                const siMeta = ifaceMap.get(name) || {};
+                const stat = statMap.get(name) || {};
+                const ipv4Obj = osDetails.find(d => d.family === 'IPv4' || d.family === 4);
+                const ipv6Obj = osDetails.find(d => d.family === 'IPv6' || d.family === 6);
+                const ip = ipv4Obj?.address || siMeta.ip4 || (osDetails[0]?.address) || '127.0.0.1';
+                const ipv6 = ipv6Obj?.address || siMeta.ip6 || '';
+                const mac = ipv4Obj?.mac || ipv6Obj?.mac || siMeta.mac || '';
+                const internal = ipv4Obj?.internal ?? ipv6Obj?.internal ?? (name === 'lo' || name === 'Loopback Pseudo-Interface 1');
                 const rxSec = Math.max(0, stat.rx_sec || 0);
                 const txSec = Math.max(0, stat.tx_sec || 0);
                 totalRxSpeed += rxSec;
                 totalTxSpeed += txSec;
-                return {
-                    name: stat.iface,
-                    ip: ifaceMeta.ip4 || '127.0.0.1',
-                    mac: ifaceMeta.mac || '',
+                // Classify interface type
+                let type = '有线以太网';
+                const lowerName = name.toLowerCase();
+                if (internal || lowerName.includes('lo') || lowerName.includes('loopback')) {
+                    type = '本地回环 (Loopback)';
+                }
+                else if (lowerName.includes('wlan') || lowerName.includes('wi-fi') || lowerName.includes('wifi') || lowerName.includes('wireless')) {
+                    type = '无线 Wi-Fi';
+                }
+                else if (lowerName.includes('tailscale')) {
+                    type = 'Tailscale 组网';
+                }
+                else if (lowerName.includes('docker') || lowerName.includes('br-') || lowerName.includes('veth')) {
+                    type = 'Docker 虚拟网桥';
+                }
+                else if (lowerName.includes('wg') || lowerName.includes('wireguard') || lowerName.includes('tun') || lowerName.includes('tap') || lowerName.includes('vpn') || lowerName.includes('vethernet')) {
+                    type = 'VPN / 虚拟网卡';
+                }
+                else if (lowerName.includes('eth') || lowerName.includes('en') || lowerName.includes('以太网') || lowerName.includes('ethernet')) {
+                    type = '有线以太网 (LAN)';
+                }
+                else {
+                    type = siMeta.type || '物理网卡';
+                }
+                interfaces.push({
+                    name,
+                    ip,
+                    ipv6: ipv6 ? ipv6.replace(/%.*$/, '') : undefined,
+                    mac: mac && mac !== '00:00:00:00:00:00' ? mac : '',
+                    type,
+                    internal,
                     rxBytes: stat.rx_bytes || 0,
                     txBytes: stat.tx_bytes || 0,
                     rxSpeed: Math.round(rxSec),
                     txSpeed: Math.round(txSec)
-                };
+                });
+            }
+            // Sort interfaces: Non-internal first, active IP first, physical ethernet/wifi first
+            interfaces.sort((a, b) => {
+                if (a.internal !== b.internal)
+                    return a.internal ? 1 : -1;
+                if (a.ip === '127.0.0.1' && b.ip !== '127.0.0.1')
+                    return 1;
+                if (b.ip === '127.0.0.1' && a.ip !== '127.0.0.1')
+                    return -1;
+                return 0;
             });
             const loadAvg = os_1.default.loadavg();
             this.latestMetrics = {
@@ -276,7 +336,7 @@ class SystemService {
                 cpu: {
                     usagePercent: Math.round((currentLoad.currentLoad || 0) * 10) / 10,
                     cores: coreLoads,
-                    model: this.staticCpuModel || os_1.default.cpus()[0]?.model || (isWin ? 'Windows Host Processor' : 'Ubuntu Server Processor'),
+                    model: this.staticCpuModel || os_1.default.cpus()[0]?.model || (isWin ? 'Windows Host Processor' : 'Linux / Unix Host Processor'),
                     temperature: cpuTemp,
                     loadAverage: [
                         Math.round(loadAvg[0] * 100) / 100,
@@ -329,7 +389,7 @@ class SystemService {
             cpu: {
                 usagePercent: Math.min(100, Math.round(loadAvg[0] * 20)),
                 cores: os_1.default.cpus().map(() => Math.round(Math.random() * 20 + 10)),
-                model: os_1.default.cpus()[0]?.model || (isWin ? 'Windows Host Processor' : 'Ubuntu Server Processor'),
+                model: os_1.default.cpus()[0]?.model || (isWin ? 'Windows Host Processor' : 'Linux / Unix Host Processor'),
                 temperature: 42,
                 loadAverage: [loadAvg[0], loadAvg[1], loadAvg[2]]
             },
@@ -375,7 +435,7 @@ class SystemService {
             },
             host: {
                 hostname: os_1.default.hostname(),
-                os: isWin ? 'Windows 11 / Server' : 'Ubuntu 24.04 LTS',
+                os: isWin ? 'Windows 11 / Server' : 'Linux Server / Unix',
                 kernel: os_1.default.release(),
                 arch: os_1.default.arch(),
                 uptime: os_1.default.uptime(),
@@ -440,7 +500,7 @@ class SystemService {
         });
     }
     getVersion() {
-        return 'v1.2.0';
+        return 'v1.3.0';
     }
     // GitHub Auto-Update Check
     async checkGitHubUpdate() {

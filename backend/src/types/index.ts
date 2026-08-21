@@ -34,7 +34,10 @@ export interface SystemMetrics {
     interfaces: Array<{
       name: string;
       ip: string;
+      ipv6?: string;
       mac: string;
+      type?: string;
+      internal?: boolean;
       rxBytes: number;
       txBytes: number;
       rxSpeed: number; // bytes/sec

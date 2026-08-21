@@ -1,7 +1,7 @@
 {
   "name": "canyat-nas",
-  "version": "1.0.0",
-  "description": "Lightweight NAS & Docker Management Panel for Ubuntu mini PC",
+  "version": "1.3.0",
+  "description": "Universal Lightweight NAS, Docker & Process Management Panel for Windows, Linux and Multi-Platform",
   "scripts": {
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
@@ -10,7 +10,7 @@
     "build": "npm run build:frontend && npm run build:backend",
     "start": "cd backend && npm start"
   },
-  "keywords": ["nas", "docker", "ubuntu", "dashboard", "file-manager", "system-monitor"],
+  "keywords": ["nas", "docker", "windows", "linux", "dashboard", "file-manager", "process-manager", "system-monitor"],
   "author": "Canyat",
   "license": "MIT"
 }

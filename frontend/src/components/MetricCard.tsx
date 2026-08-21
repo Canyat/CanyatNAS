@@ -133,10 +133,10 @@ export const MetricCard: React.FC<MetricCardProps> = ({
             <Icon className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-xs font-medium uppercase tracking-wider text-slate-400">{title}</h4>
+            <h4 className="text-xs font-medium uppercase tracking-wider opacity-75">{title}</h4>
             <div className="flex items-baseline space-x-1.5 mt-0.5">
-              <span className="text-2xl font-bold tracking-tight text-white">{value}</span>
-              {unit && <span className="text-xs font-semibold text-slate-400">{unit}</span>}
+              <span className="text-2xl font-bold tracking-tight">{value}</span>
+              {unit && <span className="text-xs font-semibold opacity-75">{unit}</span>}
             </div>
           </div>
         </div>
@@ -151,7 +151,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       {/* Progress Bar (if provided) */}
       {progressPercent !== undefined && (
         <div className="mt-4">
-          <div className="w-full bg-black/30 rounded-full h-2 overflow-hidden border border-white/5">
+          <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-2 overflow-hidden border border-black/5 dark:border-white/5">
             <div
               className={`h-full rounded-full ${colorStyles.progress} transition-all duration-500 ease-out`}
               style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}
@@ -168,7 +168,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       )}
 
       {subtitle && (
-        <p className="mt-2.5 text-xs text-slate-400 truncate flex items-center justify-between">
+        <p className="mt-2.5 text-xs opacity-75 truncate flex items-center justify-between">
           <span>{subtitle}</span>
         </p>
       )}

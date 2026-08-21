@@ -4,9 +4,9 @@
 
 @layer base {
   :root {
-    --card-opacity: 0.55;
+    --card-opacity: 0.35;
     --card-blur: 16px;
-    --bg-mask-opacity: 0.65;
+    --bg-mask-opacity: 0.40;
 
     /* Theme: Cyber Dark (Default) */
     --background: #090d16;
@@ -14,62 +14,79 @@
     --card-bg-rgb: 15, 23, 42;
     --panel-bg-rgb: 11, 17, 33;
     --card-border-rgb: 59, 130, 246;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
     --theme-primary: #3b82f6;
     --theme-accent: #6366f1;
     --theme-glow: rgba(59, 130, 246, 0.25);
   }
 
-  /* Theme: Clean Light */
+  /* Theme: Clean Light (极简浅色) */
   .theme-light, .light {
     --background: #f8fafc;
     --foreground: #0f172a;
     --card-bg-rgb: 255, 255, 255;
-    --panel-bg-rgb: 250, 250, 252;
+    --panel-bg-rgb: 248, 250, 252;
     --card-border-rgb: 203, 213, 225;
+    --text-main: #0f172a;
+    --text-muted: #334155;
+    --text-dim: #64748b;
     --theme-primary: #2563eb;
     --theme-accent: #3b82f6;
     --theme-glow: rgba(37, 99, 235, 0.15);
   }
 
-  /* Theme: Ink Wash 水墨国风 */
+  /* Theme: Ink Wash (水墨国风) */
   .theme-ink {
-    --background: #111715;
-    --foreground: #eef2f0;
-    --card-bg-rgb: 19, 29, 26;
-    --panel-bg-rgb: 14, 22, 19;
+    --background: #0f1614;
+    --foreground: #f0fdf4;
+    --card-bg-rgb: 18, 34, 28;
+    --panel-bg-rgb: 13, 24, 20;
     --card-border-rgb: 45, 212, 191;
+    --text-main: #f0fdf4;
+    --text-muted: #a7f3d0;
+    --text-dim: #5eead4;
     --theme-primary: #2dd4bf;
     --theme-accent: #0d9488;
-    --theme-glow: rgba(45, 212, 191, 0.25);
+    --theme-glow: rgba(45, 212, 191, 0.3);
   }
 
-  /* Theme: Anime ACG 二次元动漫 */
+  /* Theme: Anime ACG (二次元动漫) */
   .theme-anime {
-    --background: #0d0a1a;
-    --foreground: #f5f3ff;
-    --card-bg-rgb: 23, 18, 48;
-    --panel-bg-rgb: 16, 12, 36;
+    --background: #0c081c;
+    --foreground: #faf5ff;
+    --card-bg-rgb: 28, 18, 56;
+    --panel-bg-rgb: 18, 12, 38;
     --card-border-rgb: 168, 85, 247;
+    --text-main: #faf5ff;
+    --text-muted: #d8b4fe;
+    --text-dim: #c084fc;
     --theme-primary: #a855f7;
     --theme-accent: #ec4899;
-    --theme-glow: rgba(168, 85, 247, 0.3);
+    --theme-glow: rgba(168, 85, 247, 0.35);
   }
 
-  /* Theme: Sakura Pink 梦幻樱花粉 */
+  /* Theme: Sakura Pink (梦幻樱花粉) */
   .theme-pink {
-    --background: #1c0f16;
+    --background: #180914;
     --foreground: #fff1f2;
-    --card-bg-rgb: 42, 19, 32;
-    --panel-bg-rgb: 30, 13, 23;
-    --card-border-rgb: 236, 72, 153;
+    --card-bg-rgb: 48, 18, 38;
+    --panel-bg-rgb: 36, 12, 28;
+    --card-border-rgb: 244, 114, 182;
+    --text-main: #fff1f2;
+    --text-muted: #fbcfe8;
+    --text-dim: #f472b6;
     --theme-primary: #ec4899;
     --theme-accent: #f43f5e;
-    --theme-glow: rgba(236, 72, 153, 0.3);
+    --theme-glow: rgba(236, 72, 153, 0.35);
   }
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  color: var(--text-main);
+  background-color: var(--background);
   overflow-x: hidden;
 }
 
@@ -80,22 +97,23 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.3);
+  background: rgba(var(--card-bg-rgb), 0.2);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3);
+  background: rgba(var(--card-border-rgb), 0.3);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.6);
+  background: rgba(var(--card-border-rgb), 0.6);
 }
 
 /* Dynamic Wallpaper Backgrounds for Themes */
 .theme-bg-container {
   position: relative;
   min-height: 100vh;
+  background-color: var(--background);
 }
 
 .theme-bg-layer {
@@ -115,23 +133,23 @@ body {
 }
 
 .theme-light .theme-bg-layer {
-  background: #f8fafc;
+  background: #f1f5f9;
   opacity: 1;
 }
 
 .theme-ink .theme-bg-layer {
   background-image: url('/themes/ink_wash.jpg');
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .theme-anime .theme-bg-layer {
   background-image: url('/themes/anime_cyber.jpg');
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 .theme-pink .theme-bg-layer {
   background-image: url('/themes/sakura_pink.jpg');
-  opacity: 0.9;
+  opacity: 0.95;
 }
 
 /* Backdrop Dimming Masks (Configurable Opacity) */
@@ -141,7 +159,7 @@ body {
   z-index: 0;
   pointer-events: none;
   transition: background-color 0.3s ease, opacity 0.3s ease;
-  opacity: var(--bg-mask-opacity, 0.65);
+  opacity: var(--bg-mask-opacity, 0.60);
 }
 
 .theme-dark .theme-backdrop-mask {
@@ -153,43 +171,102 @@ body {
 }
 
 .theme-ink .theme-backdrop-mask {
-  background: #0d1512;
+  background: #0b120f;
 }
 
 .theme-anime .theme-backdrop-mask {
-  background: #0c081e;
+  background: #0a061a;
 }
 
 .theme-pink .theme-backdrop-mask {
-  background: #190b14;
+  background: #170912;
 }
 
-/* Ultra-Modern Glassmorphic Panels & Cards */
+/* Ultra-Modern Glassmorphic Panels, Cards & Inputs */
 .glass-panel {
-  background: rgba(var(--panel-bg-rgb, 15, 23, 42), min(0.92, calc(var(--card-opacity, 0.55) + 0.2)));
+  background: rgba(var(--panel-bg-rgb, 15, 23, 42), min(0.92, calc(var(--card-opacity, 0.45) + 0.25))) !important;
   backdrop-filter: blur(var(--card-blur, 16px));
   -webkit-backdrop-filter: blur(var(--card-blur, 16px));
-  border: 1px solid rgba(var(--card-border-rgb, 255, 255, 255), 0.12);
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  border: 1px solid rgba(var(--card-border-rgb, 255, 255, 255), 0.16);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.theme-light .glass-panel {
+  background: rgba(255, 255, 255, min(0.95, calc(var(--card-opacity, 0.45) + 0.35))) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06);
 }
 
 .glass-card {
-  background: rgba(var(--card-bg-rgb, 15, 23, 42), var(--card-opacity, 0.55));
-  backdrop-filter: blur(var(--card-blur, 16px));
-  -webkit-backdrop-filter: blur(var(--card-blur, 16px));
-  border: 1px solid rgba(var(--card-border-rgb, 255, 255, 255), 0.1);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.25);
+  background: rgba(var(--card-bg-rgb, 15, 23, 42), var(--card-opacity, 0.45)) !important;
+  backdrop-filter: blur(var(--card-blur, 16px)) !important;
+  -webkit-backdrop-filter: blur(var(--card-blur, 16px)) !important;
+  border: 1px solid rgba(var(--card-border-rgb, 255, 255, 255), 0.14) !important;
+  color: var(--text-main) !important;
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.25);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .theme-light .glass-card {
-  box-shadow: 0 2px 10px -1px rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, var(--card-opacity, 0.65)) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
 }
 
 .glass-card:hover {
-  border-color: rgba(var(--card-border-rgb, 59, 130, 246), 0.35);
-  box-shadow: 0 8px 28px -4px var(--theme-glow, rgba(59, 130, 246, 0.25));
-  transform: translateY(-1px);
+  border-color: rgba(var(--card-border-rgb, 59, 130, 246), 0.45) !important;
+  box-shadow: 0 12px 36px -4px var(--theme-glow, rgba(59, 130, 246, 0.25)) !important;
+  transform: translateY(-1.5px);
+}
+
+.glass-inner {
+  background: rgba(var(--card-bg-rgb, 15, 23, 42), calc(var(--card-opacity, 0.45) * 0.6)) !important;
+  border: 1px solid rgba(var(--card-border-rgb, 255, 255, 255), 0.1) !important;
+  color: var(--text-main) !important;
+}
+
+.theme-light .glass-inner {
+  background: rgba(241, 245, 249, 0.7) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+.glass-input {
+  background: rgba(var(--card-bg-rgb, 15, 23, 42), calc(var(--card-opacity, 0.45) * 0.85)) !important;
+  border: 1px solid rgba(var(--card-border-rgb, 255, 255, 255), 0.2) !important;
+  color: var(--text-main) !important;
+}
+
+.theme-light .glass-input {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(203, 213, 225, 0.8) !important;
+}
+
+.glass-input:focus {
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 2px var(--theme-glow, rgba(59, 130, 246, 0.25)) !important;
+  outline: none !important;
+}
+
+.glass-btn-secondary {
+  background: rgba(var(--card-bg-rgb, 15, 23, 42), 0.45) !important;
+  border: 1px solid rgba(var(--card-border-rgb, 255, 255, 255), 0.15) !important;
+  color: var(--text-main) !important;
+}
+
+.theme-light .glass-btn-secondary {
+  background: rgba(241, 245, 249, 0.8) !important;
+  border: 1px solid rgba(203, 213, 225, 0.7) !important;
+}
+
+.glass-btn-secondary:hover {
+  background: rgba(var(--card-bg-rgb, 15, 23, 42), 0.75) !important;
+  border-color: rgba(var(--card-border-rgb, 255, 255, 255), 0.35) !important;
+}
+
+.theme-light .glass-btn-secondary:hover {
+  background: rgba(226, 232, 240, 0.95) !important;
+  border-color: rgba(148, 163, 184, 0.8) !important;
 }
 
 /* Theme color accent utility classes */

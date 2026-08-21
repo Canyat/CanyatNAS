@@ -85,34 +85,38 @@ export const PublicShareView: React.FC<PublicShareViewProps> = ({ token }) => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400 space-y-3">
-        <Server className="w-8 h-8 text-blue-500 animate-pulse" />
-        <span className="text-sm">正在加载分享内容...</span>
+      <div className="min-h-screen theme-bg-container flex flex-col items-center justify-center space-y-3">
+        <Server className="w-8 h-8 text-[var(--theme-primary)] animate-pulse" />
+        <span className="text-sm opacity-75">正在加载分享内容...</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-purple-500 selection:text-white">
+    <div className="min-h-screen theme-bg-container flex flex-col justify-between selection:bg-purple-500 selection:text-white">
+      {/* Background Visual Layers */}
+      <div className="theme-bg-layer" />
+      <div className="theme-backdrop-mask" />
+
       {/* Navbar */}
-      <header className="px-6 py-4 border-b border-slate-900 flex items-center justify-between">
+      <header className="px-6 py-4 glass-inner border-b border-black/10 dark:border-white/10 flex items-center justify-between relative z-10">
         <div className="flex items-center space-x-2.5">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-purple-500/20">
             <Share2 className="w-4 h-4" />
           </div>
-          <span className="font-bold text-base text-white tracking-tight">CanyatNAS 分享传输</span>
+          <span className="font-bold text-base tracking-tight">CanyatNAS 分享传输</span>
         </div>
 
-        <span className="text-xs px-2.5 py-1 rounded-full bg-slate-900 border border-slate-800 text-slate-400 font-mono">
+        <span className="text-xs px-2.5 py-1 rounded-full glass-inner opacity-75 font-mono">
           安全传输通道
         </span>
       </header>
 
       {/* Main Card */}
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-xl bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-6">
+      <main className="flex-1 flex items-center justify-center p-4 relative z-10">
+        <div className="w-full max-w-xl glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
           {errorMsg && (
-            <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs flex items-center space-x-2">
+            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-xs flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -120,13 +124,13 @@ export const PublicShareView: React.FC<PublicShareViewProps> = ({ token }) => {
 
           {shareInfo && !isUnlocked && (
             <form onSubmit={handleVerify} className="space-y-5 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center mx-auto shadow-inner">
+              <div className="w-16 h-16 rounded-2xl bg-purple-500/15 text-purple-400 flex items-center justify-center mx-auto shadow-inner">
                 <Lock className="w-8 h-8" />
               </div>
 
               <div>
-                <h2 className="text-xl font-bold text-white">此文件受密码保护</h2>
-                <p className="text-xs text-slate-400 mt-1">请输入分享者设置的提取密码以继续下载或在线预览</p>
+                <h2 className="text-xl font-bold">此文件受密码保护</h2>
+                <p className="text-xs opacity-75 mt-1">请输入分享者设置的提取密码以继续下载或在线预览</p>
               </div>
 
               <div>
@@ -137,7 +141,7 @@ export const PublicShareView: React.FC<PublicShareViewProps> = ({ token }) => {
                   placeholder="请输入访问密码..."
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-center text-sm text-white font-mono focus:outline-none focus:border-purple-500 transition-colors placeholder:text-slate-600"
+                  className="w-full px-4 py-3 glass-input rounded-2xl text-center text-sm font-mono transition-colors"
                 />
               </div>
 
@@ -154,16 +158,16 @@ export const PublicShareView: React.FC<PublicShareViewProps> = ({ token }) => {
           {shareInfo && isUnlocked && (
             <div className="space-y-6">
               {/* File Info Header */}
-              <div className="flex items-center space-x-4 p-4 bg-slate-950/60 rounded-2xl border border-slate-800/80">
-                <div className="p-3.5 bg-purple-500/10 text-purple-400 rounded-2xl flex-shrink-0">
+              <div className="flex items-center space-x-4 p-4 glass-inner rounded-2xl">
+                <div className="p-3.5 bg-purple-500/15 text-purple-400 rounded-2xl flex-shrink-0">
                   {shareInfo.isDir ? <Folder className="w-8 h-8" /> : isVideo ? <Film className="w-8 h-8" /> : isAudio ? <Music className="w-8 h-8" /> : isImage ? <ImageIcon className="w-8 h-8" /> : <FileText className="w-8 h-8" />}
                 </div>
 
                 <div className="truncate flex-1">
-                  <h3 className="font-bold text-base text-white truncate" title={shareInfo.fileName}>
+                  <h3 className="font-bold text-base truncate" title={shareInfo.fileName}>
                     {shareInfo.fileName}
                   </h3>
-                  <p className="text-xs text-slate-400 font-mono mt-0.5">
+                  <p className="text-xs opacity-70 font-mono mt-0.5">
                     {shareInfo.isDir ? '文件夹打包下载' : formatSize(shareInfo.fileSize)}
                   </p>
                 </div>
@@ -171,7 +175,7 @@ export const PublicShareView: React.FC<PublicShareViewProps> = ({ token }) => {
 
               {/* Note (if exists) */}
               {shareInfo.note && (
-                <div className="p-3 bg-slate-950/40 rounded-xl border border-slate-800/50 text-xs text-slate-400">
+                <div className="p-3 glass-inner rounded-xl text-xs opacity-75">
                   <span className="text-purple-400 font-medium">分享者留言: </span>
                   <span>{shareInfo.note}</span>
                 </div>
@@ -179,7 +183,7 @@ export const PublicShareView: React.FC<PublicShareViewProps> = ({ token }) => {
 
               {/* In-page Video Preview if video */}
               {isVideo && (
-                <div className="rounded-2xl overflow-hidden bg-black border border-slate-800">
+                <div className="rounded-2xl overflow-hidden bg-black border border-black/10 dark:border-white/10">
                   <video
                     src={getMediaUrl(false)}
                     controls
@@ -190,14 +194,14 @@ export const PublicShareView: React.FC<PublicShareViewProps> = ({ token }) => {
 
               {/* In-page Audio Preview if audio */}
               {isAudio && (
-                <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 text-center">
+                <div className="p-4 glass-inner rounded-2xl text-center">
                   <audio src={getMediaUrl(false)} controls className="w-full" />
                 </div>
               )}
 
               {/* In-page Image Preview if image */}
               {isImage && (
-                <div className="rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center p-2">
+                <div className="rounded-2xl overflow-hidden glass-inner flex items-center justify-center p-2">
                   <img
                     src={getMediaUrl(false)}
                     alt={shareInfo.fileName}
@@ -223,8 +227,8 @@ export const PublicShareView: React.FC<PublicShareViewProps> = ({ token }) => {
       </main>
 
       {/* Footer */}
-      <footer className="px-6 py-4 text-center text-xs text-slate-600 border-t border-slate-900">
-        Powered by CanyatNAS • Ubuntu Home Server Engine
+      <footer className="px-6 py-4 text-center text-xs opacity-50 border-t border-black/10 dark:border-white/10 relative z-10">
+        Powered by CanyatNAS • Universal NAS & Server Engine
       </footer>
     </div>
   );
