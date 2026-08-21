@@ -239,7 +239,7 @@ export const Layout: React.FC<LayoutProps> = ({
       {/* Main Content Area */}
       <div className="relative z-10 flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Header with Theme Switcher */}
-        <header className="flex items-center justify-between px-6 py-3.5 glass-panel border-b border-slate-800/60">
+        <header className="relative z-50 flex items-center justify-between px-6 py-3.5 glass-panel border-b border-slate-800/60 shrink-0">
           <div className="flex items-center space-x-3">
             {/* Mobile menu trigger */}
             <button
@@ -272,34 +272,42 @@ export const Layout: React.FC<LayoutProps> = ({
               </button>
 
               {isThemeMenuOpen && (
-                <div
-                  className="absolute right-0 mt-2 w-48 rounded-2xl glass-panel border border-slate-700/80 shadow-2xl p-1.5 space-y-1 z-50 animate-in fade-in"
-                  onMouseLeave={() => setIsThemeMenuOpen(false)}
-                >
-                  <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                    切换界面主题
+                <>
+                  {/* Invisible full-screen backdrop to handle click outside */}
+                  <div
+                    className="fixed inset-0 z-[90]"
+                    onClick={() => setIsThemeMenuOpen(false)}
+                  />
+
+                  {/* Dropdown Menu */}
+                  <div
+                    className="absolute right-0 mt-2 w-52 rounded-2xl glass-panel border border-slate-700/80 shadow-2xl p-1.5 space-y-1 z-[100] animate-in fade-in"
+                  >
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                      切换界面主题
+                    </div>
+                    {THEME_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        onClick={() => {
+                          themeService.setTheme(preset.id);
+                          setIsThemeMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition ${
+                          currentTheme === preset.id
+                            ? 'bg-blue-600 text-white font-medium shadow-md shadow-blue-600/30'
+                            : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          {getThemeIcon(preset.id)}
+                          <span>{preset.name}</span>
+                        </div>
+                        {currentTheme === preset.id && <Check className="w-3.5 h-3.5" />}
+                      </button>
+                    ))}
                   </div>
-                  {THEME_PRESETS.map((preset) => (
-                    <button
-                      key={preset.id}
-                      onClick={() => {
-                        themeService.setTheme(preset.id);
-                        setIsThemeMenuOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition ${
-                        currentTheme === preset.id
-                          ? 'bg-blue-600 text-white font-medium shadow-md shadow-blue-600/30'
-                          : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        {getThemeIcon(preset.id)}
-                        <span>{preset.name}</span>
-                      </div>
-                      {currentTheme === preset.id && <Check className="w-3.5 h-3.5" />}
-                    </button>
-                  ))}
-                </div>
+                </>
               )}
             </div>
           </div>
