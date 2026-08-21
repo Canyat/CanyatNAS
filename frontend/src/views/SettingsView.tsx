@@ -21,11 +21,17 @@ import {
   RefreshCw,
   GitBranch,
   ExternalLink,
-  RotateCcw
+  RotateCcw,
+  Network,
+  Unlink,
+  Link2,
+  FolderTree,
+  CheckCircle2
 } from 'lucide-react';
-import { StorageRoot, ThemeMode, SystemVersionInfo } from '../types';
+import { StorageRoot, ThemeMode, SystemVersionInfo, SmbMount } from '../types';
 import { api } from '../services/api';
 import { themeService, THEME_PRESETS, AppearanceConfig } from '../services/theme';
+import { AddSmbMountModal } from '../components/AddSmbMountModal';
 
 export const SettingsView: React.FC = () => {
   const [roots, setRoots] = useState<StorageRoot[]>([]);
@@ -63,11 +69,30 @@ export const SettingsView: React.FC = () => {
   const [updateMsg, setUpdateMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
 
+  // SMB Mounts
+  const [smbMounts, setSmbMounts] = useState<SmbMount[]>([]);
+  const [availableDrives, setAvailableDrives] = useState<string[]>([]);
+  const [isAddSmbModalOpen, setIsAddSmbModalOpen] = useState(false);
+  const [isSmbLoading, setIsSmbLoading] = useState(false);
+  const [smbActionId, setSmbActionId] = useState<string | null>(null);
+
   const fetchRoots = async () => {
     try {
       const list = await api.getStorageRoots();
       setRoots(list);
     } catch {}
+  };
+
+  const fetchSmbMounts = async () => {
+    setIsSmbLoading(true);
+    try {
+      const res = await api.getSmbMounts();
+      setSmbMounts(res.mounts || []);
+      setAvailableDrives(res.availableDrives || []);
+    } catch {}
+    finally {
+      setIsSmbLoading(false);
+    }
   };
 
   const fetchSettings = async () => {
@@ -90,6 +115,7 @@ export const SettingsView: React.FC = () => {
 
   useEffect(() => {
     fetchRoots();
+    fetchSmbMounts();
     fetchSettings();
     fetchUserInfo();
 
@@ -110,6 +136,51 @@ export const SettingsView: React.FC = () => {
       unsub();
     };
   }, []);
+
+  const handleMountSmb = async (id: string) => {
+    setSmbActionId(id);
+    try {
+      const res = await api.mountSmb(id);
+      alert(res.message);
+      fetchSmbMounts();
+      fetchRoots();
+    } catch (err: any) {
+      alert(`挂载失败: ${err.message}`);
+      fetchSmbMounts();
+    } finally {
+      setSmbActionId(null);
+    }
+  };
+
+  const handleUnmountSmb = async (id: string, name: string) => {
+    if (!window.confirm(`确定要卸载 SMB 共享【${name}】吗？`)) return;
+    setSmbActionId(id);
+    try {
+      const res = await api.unmountSmb(id);
+      alert(res.message);
+      fetchSmbMounts();
+      fetchRoots();
+    } catch (err: any) {
+      alert(`卸载失败: ${err.message}`);
+    } finally {
+      setSmbActionId(null);
+    }
+  };
+
+  const handleDeleteSmb = async (id: string, name: string) => {
+    if (!window.confirm(`确定要删除 SMB 挂载配置【${name}】吗？`)) return;
+    setSmbActionId(id);
+    try {
+      const res = await api.deleteSmbMount(id);
+      alert(res.message);
+      fetchSmbMounts();
+      fetchRoots();
+    } catch (err: any) {
+      alert(`删除失败: ${err.message}`);
+    } finally {
+      setSmbActionId(null);
+    }
+  };
 
   const handleAddRoot = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -692,7 +763,125 @@ export const SettingsView: React.FC = () => {
         </form>
       </div>
 
-      {/* 5. WebDAV Settings */}
+      {/* 5. SMB / CIFS Network Share Mounts */}
+      <div className="glass-card rounded-2xl p-6 shadow-lg space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-blue-500/15 text-blue-400 rounded-xl">
+              <Network className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm">SMB / CIFS 远程网络共享挂载</h3>
+              <p className="text-xs opacity-75">
+                将局域网内的群晖、TrueNAS、Windows 共享主机或路由器 SMB 挂载为本地 NAS 磁盘，并在文件管理中直接浏览与点播
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={fetchSmbMounts}
+              className="p-2 glass-btn-secondary rounded-xl transition"
+              title="刷新 SMB 挂载列表"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSmbLoading ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={() => setIsAddSmbModalOpen(true)}
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-[var(--theme-primary)] hover:opacity-90 text-white text-xs font-semibold rounded-xl shadow-md transition"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>挂载新 SMB 共享</span>
+            </button>
+          </div>
+        </div>
+
+        {/* SMB Mounts List */}
+        {smbMounts.length === 0 ? (
+          <div className="p-8 text-center glass-inner rounded-xl space-y-2.5">
+            <Network className="w-8 h-8 opacity-40 mx-auto text-blue-400" />
+            <p className="text-xs opacity-75 font-medium">暂无远程 SMB 挂载</p>
+            <p className="text-[11px] opacity-60 max-w-md mx-auto">
+              您可以添加局域网内其他 NAS 或电脑的共享文件夹，挂载成功后将自动出现在【NAS 文件管理器】中。
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-black/10 dark:divide-white/10 glass-inner rounded-xl overflow-hidden">
+            {smbMounts.map((smb) => {
+              const isActioning = smbActionId === smb.id;
+              return (
+                <div key={smb.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2.5 flex-wrap">
+                      <span className="font-semibold text-sm">{smb.name}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold uppercase flex items-center space-x-1 ${
+                        smb.status === 'mounted'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : smb.status === 'error'
+                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                          : 'glass-card opacity-60'
+                      }`}>
+                        <span>{smb.status === 'mounted' ? '● 已挂载' : smb.status === 'error' ? '⚠ 异常' : '○ 未挂载'}</span>
+                      </span>
+
+                      {smb.autoMount && (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded glass-card opacity-70">开机自挂载</span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center space-x-3 text-[11px] opacity-75 font-mono flex-wrap gap-y-1">
+                      <span>远程: // {smb.host}/{smb.shareName}</span>
+                      <span>➔</span>
+                      <span className="font-semibold text-[var(--theme-primary)]">挂载点: {smb.mountPoint}</span>
+                      {smb.username && <span>(用户: {smb.username})</span>}
+                    </div>
+
+                    {smb.errorMessage && (
+                      <p className="text-[11px] text-rose-400 opacity-90">{smb.errorMessage}</p>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center space-x-2 shrink-0">
+                    {smb.status === 'mounted' ? (
+                      <button
+                        disabled={isActioning}
+                        onClick={() => handleUnmountSmb(smb.id, smb.name)}
+                        className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs font-medium transition"
+                        title="卸载此 SMB 挂载"
+                      >
+                        <Unlink className="w-3.5 h-3.5" />
+                        <span>{isActioning ? '处理中...' : '卸载'}</span>
+                      </button>
+                    ) : (
+                      <button
+                        disabled={isActioning}
+                        onClick={() => handleMountSmb(smb.id)}
+                        className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition shadow-sm"
+                        title="挂载此 SMB 共享"
+                      >
+                        <Link2 className="w-3.5 h-3.5" />
+                        <span>{isActioning ? '正在连接...' : '立即挂载'}</span>
+                      </button>
+                    )}
+
+                    <button
+                      disabled={isActioning}
+                      onClick={() => handleDeleteSmb(smb.id, smb.name)}
+                      className="p-2 opacity-70 hover:opacity-100 hover:text-rose-400 rounded-lg transition"
+                      title="删除此 SMB 配置"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 6. WebDAV Settings */}
       <div className="glass-card rounded-2xl p-6 shadow-lg space-y-4">
         <div className="flex items-center space-x-2.5">
           <div className="p-2 bg-blue-500/15 text-blue-400 rounded-xl">
@@ -751,6 +940,17 @@ export const SettingsView: React.FC = () => {
           </button>
         </form>
       </div>
+
+      {/* Add SMB Modal */}
+      <AddSmbMountModal
+        isOpen={isAddSmbModalOpen}
+        onClose={() => setIsAddSmbModalOpen(false)}
+        onSuccess={() => {
+          fetchSmbMounts();
+          fetchRoots();
+        }}
+        availableDrives={availableDrives}
+      />
     </div>
   );
 };

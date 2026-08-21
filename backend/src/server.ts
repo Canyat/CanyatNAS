@@ -12,6 +12,8 @@ import { filesController, uploadMiddleware } from './controllers/files.controlle
 import { shareController } from './controllers/share.controller';
 import { settingsController } from './controllers/settings.controller';
 import { processController } from './controllers/process.controller';
+import { smbController } from './controllers/smb.controller';
+import { smbService } from './services/smb.service';
 import { setupWebSockets } from './websocket';
 
 dotenv.config();
@@ -106,6 +108,13 @@ api.delete('/settings/roots/:id', (req, res) => settingsController.removeStorage
 api.get('/settings', (req, res) => settingsController.getSettings(req, res));
 api.post('/settings', (req, res) => settingsController.updateSettings(req, res));
 
+// SMB / CIFS Network Share Mounts
+api.get('/smb/mounts', (req, res) => smbController.list(req, res));
+api.post('/smb/mounts', (req, res) => smbController.create(req, res));
+api.post('/smb/mounts/:id/mount', (req, res) => smbController.mount(req, res));
+api.post('/smb/mounts/:id/unmount', (req, res) => smbController.unmount(req, res));
+api.delete('/smb/mounts/:id', (req, res) => smbController.delete(req, res));
+
 app.use('/api', api);
 
 // Serve Frontend static assets if available
@@ -135,10 +144,13 @@ if (fs.existsSync(frontendDist)) {
   });
 }
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`===========================================`);
   console.log(`🚀 CanyatNAS Dashboard is active!`);
   console.log(`🌐 Web UI & API: http://localhost:${PORT}`);
   console.log(`📁 Platform: ${process.platform === 'win32' ? 'Windows NAS' : 'Linux / Unix Server'}`);
   console.log(`===========================================`);
+
+  // Background auto-mount SMB network shares
+  await smbService.autoMountAll();
 });

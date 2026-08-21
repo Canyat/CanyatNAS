@@ -142,8 +142,24 @@ export interface StorageRoot {
   name: string;
   path: string;
   isSystem: boolean;
+  type?: 'local' | 'smb';
+  smbMountId?: string;
   totalSpace?: number;
   freeSpace?: number;
+}
+
+export interface SmbMount {
+  id: string;
+  name: string;
+  host: string;
+  shareName: string;
+  username?: string;
+  password?: string;
+  mountPoint: string;
+  status: 'mounted' | 'unmounted' | 'error';
+  errorMessage?: string;
+  autoMount: boolean;
+  createdAt: number;
 }
 
 export interface ShareLink {

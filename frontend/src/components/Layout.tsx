@@ -51,7 +51,7 @@ export const Layout: React.FC<LayoutProps> = ({
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isAppearanceMenuOpen, setIsAppearanceMenuOpen] = useState(false);
   const [username, setUsername] = useState('Administrator');
-  const [version, setVersion] = useState('v1.3.0');
+  const [version, setVersion] = useState('v1.3.1');
   const [hasUpdate, setHasUpdate] = useState(false);
 
   useEffect(() => {

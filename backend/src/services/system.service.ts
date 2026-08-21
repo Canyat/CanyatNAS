@@ -495,7 +495,7 @@ export class SystemService {
   }
 
   public getVersion(): string {
-    return 'v1.3.0';
+    return 'v1.3.1';
   }
 
   // GitHub Auto-Update Check

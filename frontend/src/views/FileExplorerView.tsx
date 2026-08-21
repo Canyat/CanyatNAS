@@ -295,6 +295,7 @@ export const FileExplorerView: React.FC = () => {
           >
             {roots.map((root) => (
               <option key={root.id} value={root.id} className="text-black dark:text-white">
+                {root.type === 'smb' ? '🌐 [SMB] ' : root.isSystem ? '💻 ' : '💽 '}
                 {root.name} ({root.path})
               </option>
             ))}

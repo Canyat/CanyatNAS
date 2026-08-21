@@ -1,4 +1,4 @@
-import { ContainerInfo, ImageInfo, FileItem, StorageRoot, ShareLink, AppTemplate, SystemMetrics } from '../types';
+import { ContainerInfo, ImageInfo, FileItem, StorageRoot, ShareLink, AppTemplate, SystemMetrics, SmbMount } from '../types';
 
 const API_BASE = '/api';
 
@@ -421,6 +421,38 @@ export class ApiService {
 
   public async getProcessLogs(id: string): Promise<{ logs: string[] }> {
     return this.request<{ logs: string[] }>(`/processes/${id}/logs`);
+  }
+
+  // SMB / CIFS Network Share Mounts
+  public async getSmbMounts(): Promise<{ mounts: SmbMount[]; availableDrives: string[] }> {
+    return this.request<{ mounts: SmbMount[]; availableDrives: string[] }>('/smb/mounts');
+  }
+
+  public async createSmbMount(data: {
+    name: string;
+    host: string;
+    shareName: string;
+    username?: string;
+    password?: string;
+    mountPoint?: string;
+    autoMount?: boolean;
+  }): Promise<{ success: boolean; message: string; mount: SmbMount }> {
+    return this.request('/smb/mounts', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  public async mountSmb(id: string): Promise<{ success: boolean; message: string; mount: SmbMount }> {
+    return this.request(`/smb/mounts/${id}/mount`, { method: 'POST' });
+  }
+
+  public async unmountSmb(id: string): Promise<{ success: boolean; message: string }> {
+    return this.request(`/smb/mounts/${id}/unmount`, { method: 'POST' });
+  }
+
+  public async deleteSmbMount(id: string): Promise<{ success: boolean; message: string }> {
+    return this.request(`/smb/mounts/${id}`, { method: 'DELETE' });
   }
 }
 

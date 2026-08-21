@@ -17,6 +17,8 @@ const files_controller_1 = require("./controllers/files.controller");
 const share_controller_1 = require("./controllers/share.controller");
 const settings_controller_1 = require("./controllers/settings.controller");
 const process_controller_1 = require("./controllers/process.controller");
+const smb_controller_1 = require("./controllers/smb.controller");
+const smb_service_1 = require("./services/smb.service");
 const websocket_1 = require("./websocket");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -97,6 +99,12 @@ api.post('/settings/roots', (req, res) => settings_controller_1.settingsControll
 api.delete('/settings/roots/:id', (req, res) => settings_controller_1.settingsController.removeStorageRoot(req, res));
 api.get('/settings', (req, res) => settings_controller_1.settingsController.getSettings(req, res));
 api.post('/settings', (req, res) => settings_controller_1.settingsController.updateSettings(req, res));
+// SMB / CIFS Network Share Mounts
+api.get('/smb/mounts', (req, res) => smb_controller_1.smbController.list(req, res));
+api.post('/smb/mounts', (req, res) => smb_controller_1.smbController.create(req, res));
+api.post('/smb/mounts/:id/mount', (req, res) => smb_controller_1.smbController.mount(req, res));
+api.post('/smb/mounts/:id/unmount', (req, res) => smb_controller_1.smbController.unmount(req, res));
+api.delete('/smb/mounts/:id', (req, res) => smb_controller_1.smbController.delete(req, res));
 app.use('/api', api);
 // Serve Frontend static assets if available
 const frontendDist = path_1.default.resolve(__dirname, '../../frontend/dist');
@@ -125,10 +133,12 @@ else {
     `);
     });
 }
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
     console.log(`===========================================`);
     console.log(`🚀 CanyatNAS Dashboard is active!`);
     console.log(`🌐 Web UI & API: http://localhost:${PORT}`);
     console.log(`📁 Platform: ${process.platform === 'win32' ? 'Windows NAS' : 'Linux / Unix Server'}`);
     console.log(`===========================================`);
+    // Background auto-mount SMB network shares
+    await smb_service_1.smbService.autoMountAll();
 });

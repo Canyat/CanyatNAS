@@ -2,7 +2,7 @@ import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
 import bcrypt from 'bcryptjs';
-import { ShareLink, StorageRoot, ProcessInfo } from '../types';
+import { ShareLink, StorageRoot, ProcessInfo, SmbMount } from '../types';
 
 export class DbService {
   private db: sqlite3.Database;
@@ -83,7 +83,30 @@ export class DbService {
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           path TEXT UNIQUE NOT NULL,
-          is_system INTEGER NOT NULL
+          is_system INTEGER NOT NULL,
+          type TEXT DEFAULT 'local',
+          smb_mount_id TEXT
+        )
+      `);
+
+      // Migrations for existing storage_roots
+      this.db.run(`ALTER TABLE storage_roots ADD COLUMN type TEXT DEFAULT 'local'`, () => {});
+      this.db.run(`ALTER TABLE storage_roots ADD COLUMN smb_mount_id TEXT`, () => {});
+
+      // SMB Mounts table
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS smb_mounts (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          host TEXT NOT NULL,
+          share_name TEXT NOT NULL,
+          username TEXT,
+          password TEXT,
+          mount_point TEXT NOT NULL,
+          status TEXT DEFAULT 'unmounted',
+          error_message TEXT,
+          auto_mount INTEGER DEFAULT 1,
+          created_at INTEGER NOT NULL
         )
       `);
 
@@ -195,10 +218,17 @@ export class DbService {
     }
 
     return new Promise((resolve, reject) => {
-      this.db.all('SELECT id, name, path, is_system as isSystem FROM storage_roots', (err, rows: any[]) => {
+      this.db.all('SELECT id, name, path, is_system as isSystem, type, smb_mount_id as smbMountId FROM storage_roots', (err, rows: any[]) => {
         if (err) reject(err);
         else {
-          const list = rows.map(r => ({ ...r, isSystem: Boolean(r.isSystem) }));
+          const list: StorageRoot[] = (rows || []).map(r => ({
+            id: r.id,
+            name: r.name,
+            path: r.path,
+            isSystem: Boolean(r.isSystem),
+            type: r.type || 'local',
+            smbMountId: r.smbMountId || undefined
+          }));
           this.cachedStorageRoots = list;
           resolve(list);
         }
@@ -206,18 +236,18 @@ export class DbService {
     });
   }
 
-  public addStorageRoot(name: string, dirPath: string): Promise<StorageRoot> {
+  public addStorageRoot(name: string, dirPath: string, type: 'local' | 'smb' = 'local', smbMountId?: string): Promise<StorageRoot> {
     return new Promise((resolve, reject) => {
-      const id = 'root_' + Date.now();
+      const id = smbMountId ? `smb_root_${smbMountId}` : 'root_' + Date.now();
       const resolvedPath = path.resolve(dirPath);
       this.db.run(
-        'INSERT INTO storage_roots (id, name, path, is_system) VALUES (?, ?, ?, 0)',
-        [id, name, resolvedPath],
+        'INSERT OR REPLACE INTO storage_roots (id, name, path, is_system, type, smb_mount_id) VALUES (?, ?, ?, 0, ?, ?)',
+        [id, name, resolvedPath, type, smbMountId || null],
         (err) => {
           if (err) reject(err);
           else {
             this.cachedStorageRoots = null; // Invalidate cache
-            resolve({ id, name, path: resolvedPath, isSystem: false });
+            resolve({ id, name, path: resolvedPath, isSystem: false, type, smbMountId });
           }
         }
       );
@@ -227,6 +257,18 @@ export class DbService {
   public removeStorageRoot(id: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       this.db.run('DELETE FROM storage_roots WHERE id = ?', [id], (err) => {
+        if (err) reject(err);
+        else {
+          this.cachedStorageRoots = null; // Invalidate cache
+          resolve(true);
+        }
+      });
+    });
+  }
+
+  public removeSmbStorageRoot(smbMountId: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.db.run('DELETE FROM storage_roots WHERE smb_mount_id = ? OR id = ?', [smbMountId, `smb_root_${smbMountId}`], (err) => {
         if (err) reject(err);
         else {
           this.cachedStorageRoots = null; // Invalidate cache
@@ -473,6 +515,115 @@ export class DbService {
   public deleteProcess(id: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       this.db.run('DELETE FROM processes WHERE id = ?', [id], function (err) {
+        if (err) reject(err);
+        else resolve(this.changes > 0);
+      });
+    });
+  }
+
+  // SMB Mounts Management
+  public getSmbMounts(): Promise<SmbMount[]> {
+    return new Promise((resolve, reject) => {
+      this.db.all('SELECT id, name, host, share_name as shareName, username, password, mount_point as mountPoint, status, error_message as errorMessage, auto_mount as autoMount, created_at as createdAt FROM smb_mounts ORDER BY created_at DESC', (err, rows: any[]) => {
+        if (err) reject(err);
+        else {
+          const list: SmbMount[] = (rows || []).map(r => ({
+            id: r.id,
+            name: r.name,
+            host: r.host,
+            shareName: r.shareName,
+            username: r.username || undefined,
+            password: r.password || undefined,
+            mountPoint: r.mountPoint,
+            status: r.status || 'unmounted',
+            errorMessage: r.errorMessage || undefined,
+            autoMount: Boolean(r.autoMount),
+            createdAt: r.createdAt
+          }));
+          resolve(list);
+        }
+      });
+    });
+  }
+
+  public getSmbMountById(id: string): Promise<SmbMount | null> {
+    return new Promise((resolve, reject) => {
+      this.db.get('SELECT id, name, host, share_name as shareName, username, password, mount_point as mountPoint, status, error_message as errorMessage, auto_mount as autoMount, created_at as createdAt FROM smb_mounts WHERE id = ?', [id], (err, r: any) => {
+        if (err) reject(err);
+        else if (!r) resolve(null);
+        else {
+          resolve({
+            id: r.id,
+            name: r.name,
+            host: r.host,
+            shareName: r.shareName,
+            username: r.username || undefined,
+            password: r.password || undefined,
+            mountPoint: r.mountPoint,
+            status: r.status || 'unmounted',
+            errorMessage: r.errorMessage || undefined,
+            autoMount: Boolean(r.autoMount),
+            createdAt: r.createdAt
+          });
+        }
+      });
+    });
+  }
+
+  public saveSmbMount(mount: SmbMount): Promise<SmbMount> {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        `INSERT OR REPLACE INTO smb_mounts (id, name, host, share_name, username, password, mount_point, status, error_message, auto_mount, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          mount.id,
+          mount.name,
+          mount.host,
+          mount.shareName,
+          mount.username || null,
+          mount.password || null,
+          mount.mountPoint,
+          mount.status || 'unmounted',
+          mount.errorMessage || null,
+          mount.autoMount ? 1 : 0,
+          mount.createdAt || Date.now()
+        ],
+        (err) => {
+          if (err) reject(err);
+          else resolve(mount);
+        }
+      );
+    });
+  }
+
+  public updateSmbMount(id: string, updates: Partial<SmbMount>): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      const fields: string[] = [];
+      const values: any[] = [];
+
+      if (updates.name !== undefined) { fields.push('name = ?'); values.push(updates.name); }
+      if (updates.host !== undefined) { fields.push('host = ?'); values.push(updates.host); }
+      if (updates.shareName !== undefined) { fields.push('share_name = ?'); values.push(updates.shareName); }
+      if (updates.username !== undefined) { fields.push('username = ?'); values.push(updates.username); }
+      if (updates.password !== undefined) { fields.push('password = ?'); values.push(updates.password); }
+      if (updates.mountPoint !== undefined) { fields.push('mount_point = ?'); values.push(updates.mountPoint); }
+      if (updates.status !== undefined) { fields.push('status = ?'); values.push(updates.status); }
+      if (updates.errorMessage !== undefined) { fields.push('error_message = ?'); values.push(updates.errorMessage); }
+      if (updates.autoMount !== undefined) { fields.push('auto_mount = ?'); values.push(updates.autoMount ? 1 : 0); }
+
+      if (fields.length === 0) return resolve(true);
+
+      values.push(id);
+      this.db.run(`UPDATE smb_mounts SET ${fields.join(', ')} WHERE id = ?`, values, function (err) {
+        if (err) reject(err);
+        else resolve(this.changes > 0);
+      });
+    });
+  }
+
+  public deleteSmbMount(id: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.db.run('DELETE FROM smb_mounts WHERE id = ?', [id], function (err) {
         if (err) reject(err);
         else resolve(this.changes > 0);
       });
