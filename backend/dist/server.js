@@ -99,12 +99,17 @@ api.post('/settings/roots', (req, res) => settings_controller_1.settingsControll
 api.delete('/settings/roots/:id', (req, res) => settings_controller_1.settingsController.removeStorageRoot(req, res));
 api.get('/settings', (req, res) => settings_controller_1.settingsController.getSettings(req, res));
 api.post('/settings', (req, res) => settings_controller_1.settingsController.updateSettings(req, res));
-// SMB / CIFS Network Share Mounts
+// SMB / CIFS Network Share Mounts (Remote Client)
 api.get('/smb/mounts', (req, res) => smb_controller_1.smbController.list(req, res));
 api.post('/smb/mounts', (req, res) => smb_controller_1.smbController.create(req, res));
 api.post('/smb/mounts/:id/mount', (req, res) => smb_controller_1.smbController.mount(req, res));
 api.post('/smb/mounts/:id/unmount', (req, res) => smb_controller_1.smbController.unmount(req, res));
 api.delete('/smb/mounts/:id', (req, res) => smb_controller_1.smbController.delete(req, res));
+// SMB Local Server Shares (Host Sharing to LAN)
+api.get('/smb/server/status', (req, res) => smb_controller_1.smbController.getServerStatus(req, res));
+api.get('/smb/server/shares', (req, res) => smb_controller_1.smbController.listLocalShares(req, res));
+api.post('/smb/server/shares', (req, res) => smb_controller_1.smbController.createLocalShare(req, res));
+api.delete('/smb/server/shares/:name', (req, res) => smb_controller_1.smbController.deleteLocalShare(req, res));
 app.use('/api', api);
 // Serve Frontend static assets if available
 const frontendDist = path_1.default.resolve(__dirname, '../../frontend/dist');

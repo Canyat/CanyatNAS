@@ -1,4 +1,4 @@
-import { ContainerInfo, ImageInfo, FileItem, StorageRoot, ShareLink, AppTemplate, SystemMetrics, SmbMount } from '../types';
+import { ContainerInfo, ImageInfo, FileItem, StorageRoot, ShareLink, AppTemplate, SystemMetrics, SmbMount, LocalSmbShare } from '../types';
 
 const API_BASE = '/api';
 
@@ -453,6 +453,39 @@ export class ApiService {
 
   public async deleteSmbMount(id: string): Promise<{ success: boolean; message: string }> {
     return this.request(`/smb/mounts/${id}`, { method: 'DELETE' });
+  }
+
+  // SMB Server Sharing (Host Sharing to LAN)
+  public async getLocalSmbServerStatus(): Promise<{
+    isRunning: boolean;
+    serviceName: string;
+    lanIp: string;
+    hostname: string;
+    windowsConnectExample: string;
+    macConnectExample: string;
+  }> {
+    return this.request('/smb/server/status');
+  }
+
+  public async getLocalSmbShares(): Promise<{ shares: LocalSmbShare[] }> {
+    return this.request<{ shares: LocalSmbShare[] }>('/smb/server/shares');
+  }
+
+  public async createLocalSmbShare(data: {
+    name: string;
+    path: string;
+    readOnly?: boolean;
+    guestOk?: boolean;
+    description?: string;
+  }): Promise<{ success: boolean; message: string; share: LocalSmbShare }> {
+    return this.request('/smb/server/shares', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  public async deleteLocalSmbShare(name: string): Promise<{ success: boolean; message: string }> {
+    return this.request(`/smb/server/shares/${encodeURIComponent(name)}`, { method: 'DELETE' });
   }
 }
 

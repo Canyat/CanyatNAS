@@ -25,12 +25,14 @@ import {
   Square,
   MoreVertical,
   ArrowUpDown,
-  Code
+  Code,
+  Network
 } from 'lucide-react';
 import { FileItem, StorageRoot } from '../types';
 import { api } from '../services/api';
 import { FilePreviewModal } from '../components/FilePreviewModal';
 import { CreateShareModal } from '../components/CreateShareModal';
+import { CreateLocalSmbShareModal } from '../components/CreateLocalSmbShareModal';
 
 export const FileExplorerView: React.FC = () => {
   const [roots, setRoots] = useState<StorageRoot[]>([]);
@@ -52,6 +54,7 @@ export const FileExplorerView: React.FC = () => {
   // Modals
   const [previewFile, setPreviewFile] = useState<FileItem | null>(null);
   const [shareFile, setShareFile] = useState<FileItem | null>(null);
+  const [smbFolder, setSmbFolder] = useState<{ path: string; name: string } | null>(null);
 
   // Fetch Storage Roots
   useEffect(() => {
@@ -505,6 +508,24 @@ export const FileExplorerView: React.FC = () => {
 
                   {/* Quick Action Overlay on hover */}
                   <div className="absolute top-2.5 right-2.5 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {file.isDir && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const selectedRoot = roots.find(r => r.id === selectedRootId);
+                          const folderFullPath = selectedRoot ? (
+                            selectedRoot.path.endsWith('\\') || selectedRoot.path.endsWith('/')
+                              ? `${selectedRoot.path}${file.relativePath.replace(/^\//, '').replace(/\//g, '\\')}`
+                              : `${selectedRoot.path}\\${file.relativePath.replace(/^\//, '').replace(/\//g, '\\')}`
+                          ) : file.name;
+                          setSmbFolder({ path: folderFullPath, name: file.name });
+                        }}
+                        className="p-1 glass-btn-secondary hover:bg-emerald-600 hover:text-white rounded-md transition-colors"
+                        title="发布为局域网 SMB 共享"
+                      >
+                        <Network className="w-3 h-3" />
+                      </button>
+                    )}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -590,6 +611,24 @@ export const FileExplorerView: React.FC = () => {
                             {file.isDir ? <Folder className="w-3.5 h-3.5" /> : <Edit2 className="w-3.5 h-3.5" />}
                           </button>
 
+                          {file.isDir && (
+                            <button
+                              onClick={() => {
+                                const selectedRoot = roots.find(r => r.id === selectedRootId);
+                                const folderFullPath = selectedRoot ? (
+                                  selectedRoot.path.endsWith('\\') || selectedRoot.path.endsWith('/')
+                                    ? `${selectedRoot.path}${file.relativePath.replace(/^\//, '').replace(/\//g, '\\')}`
+                                    : `${selectedRoot.path}\\${file.relativePath.replace(/^\//, '').replace(/\//g, '\\')}`
+                                ) : file.name;
+                                setSmbFolder({ path: folderFullPath, name: file.name });
+                              }}
+                              className="p-1.5 opacity-70 hover:opacity-100 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                              title="发布为局域网 SMB 共享"
+                            >
+                              <Network className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+
                           <button
                             onClick={() => setShareFile(file)}
                             className="p-1.5 opacity-70 hover:opacity-100 hover:text-purple-400 rounded-lg transition-colors"
@@ -648,6 +687,18 @@ export const FileExplorerView: React.FC = () => {
           rootId={selectedRootId}
           file={shareFile}
           onClose={() => setShareFile(null)}
+        />
+      )}
+
+      {/* Create Local SMB Share Modal */}
+      {smbFolder && (
+        <CreateLocalSmbShareModal
+          isOpen={Boolean(smbFolder)}
+          onClose={() => setSmbFolder(null)}
+          onSuccess={() => setSmbFolder(null)}
+          initialPath={smbFolder.path}
+          initialName={smbFolder.name}
+          availableRoots={roots}
         />
       )}
     </div>

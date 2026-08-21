@@ -26,12 +26,15 @@ import {
   Unlink,
   Link2,
   FolderTree,
-  CheckCircle2
+  CheckCircle2,
+  Share2,
+  Copy
 } from 'lucide-react';
-import { StorageRoot, ThemeMode, SystemVersionInfo, SmbMount } from '../types';
+import { StorageRoot, ThemeMode, SystemVersionInfo, SmbMount, LocalSmbShare } from '../types';
 import { api } from '../services/api';
 import { themeService, THEME_PRESETS, AppearanceConfig } from '../services/theme';
 import { AddSmbMountModal } from '../components/AddSmbMountModal';
+import { CreateLocalSmbShareModal } from '../components/CreateLocalSmbShareModal';
 
 export const SettingsView: React.FC = () => {
   const [roots, setRoots] = useState<StorageRoot[]>([]);
@@ -69,7 +72,22 @@ export const SettingsView: React.FC = () => {
   const [updateMsg, setUpdateMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
 
-  // SMB Mounts
+  // SMB Management
+  const [smbTab, setSmbTab] = useState<'server' | 'client'>('server');
+  const [localShares, setLocalShares] = useState<LocalSmbShare[]>([]);
+  const [isLocalSharesLoading, setIsLocalSharesLoading] = useState(false);
+  const [isCreateLocalModalOpen, setIsCreateLocalModalOpen] = useState(false);
+  const [serverStatus, setServerStatus] = useState<{
+    isRunning: boolean;
+    serviceName: string;
+    lanIp: string;
+    hostname: string;
+    windowsConnectExample: string;
+    macConnectExample: string;
+  } | null>(null);
+  const [copiedShareId, setCopiedShareId] = useState<string | null>(null);
+
+  // SMB Mounts (Remote Client)
   const [smbMounts, setSmbMounts] = useState<SmbMount[]>([]);
   const [availableDrives, setAvailableDrives] = useState<string[]>([]);
   const [isAddSmbModalOpen, setIsAddSmbModalOpen] = useState(false);
@@ -81,6 +99,21 @@ export const SettingsView: React.FC = () => {
       const list = await api.getStorageRoots();
       setRoots(list);
     } catch {}
+  };
+
+  const fetchLocalShares = async () => {
+    setIsLocalSharesLoading(true);
+    try {
+      const [sharesRes, statusRes] = await Promise.all([
+        api.getLocalSmbShares(),
+        api.getLocalSmbServerStatus()
+      ]);
+      setLocalShares(sharesRes.shares || []);
+      setServerStatus(statusRes);
+    } catch {}
+    finally {
+      setIsLocalSharesLoading(false);
+    }
   };
 
   const fetchSmbMounts = async () => {
@@ -115,6 +148,7 @@ export const SettingsView: React.FC = () => {
 
   useEffect(() => {
     fetchRoots();
+    fetchLocalShares();
     fetchSmbMounts();
     fetchSettings();
     fetchUserInfo();
@@ -136,6 +170,25 @@ export const SettingsView: React.FC = () => {
       unsub();
     };
   }, []);
+
+  const handleDeleteLocalShare = async (name: string) => {
+    if (!window.confirm(`确定要关闭并取消 SMB 网络共享【${name}】吗？`)) return;
+    try {
+      const res = await api.deleteLocalSmbShare(name);
+      alert(res.message);
+      fetchLocalShares();
+    } catch (err: any) {
+      alert(`关闭共享失败: ${err.message}`);
+    }
+  };
+
+  const handleCopyShareUrl = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedShareId(id);
+    setTimeout(() => {
+      setCopiedShareId(null);
+    }, 2000);
+  };
 
   const handleMountSmb = async (id: string) => {
     setSmbActionId(id);
@@ -763,120 +816,268 @@ export const SettingsView: React.FC = () => {
         </form>
       </div>
 
-      {/* 5. SMB / CIFS Network Share Mounts */}
-      <div className="glass-card rounded-2xl p-6 shadow-lg space-y-4">
+      {/* 5. SMB / CIFS Network Sharing & Mounts Hub */}
+      <div className="glass-card rounded-2xl p-6 shadow-lg space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 bg-blue-500/15 text-blue-400 rounded-xl">
               <Network className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-sm">SMB / CIFS 远程网络共享挂载</h3>
+              <h3 className="font-bold text-sm">SMB / CIFS 局域网网络共享中心</h3>
               <p className="text-xs opacity-75">
-                将局域网内的群晖、TrueNAS、Windows 共享主机或路由器 SMB 挂载为本地 NAS 磁盘，并在文件管理中直接浏览与点播
+                支持对外共享 NAS 硬盘/目录给局域网其他电脑，亦支持挂载远端群晖、TrueNAS 与路由 SMB
               </p>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          {/* Sub Tab Switcher */}
+          <div className="flex items-center space-x-1 p-1 glass-inner rounded-xl">
             <button
-              onClick={fetchSmbMounts}
-              className="p-2 glass-btn-secondary rounded-xl transition"
-              title="刷新 SMB 挂载列表"
+              onClick={() => setSmbTab('server')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                smbTab === 'server'
+                  ? 'bg-[var(--theme-primary)] text-white shadow-sm'
+                  : 'opacity-70 hover:opacity-100'
+              }`}
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSmbLoading ? 'animate-spin' : ''}`} />
+              <Share2 className="w-3.5 h-3.5" />
+              <span>对外共享本机 ({localShares.length})</span>
             </button>
             <button
-              onClick={() => setIsAddSmbModalOpen(true)}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-[var(--theme-primary)] hover:opacity-90 text-white text-xs font-semibold rounded-xl shadow-md transition"
+              onClick={() => setSmbTab('client')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                smbTab === 'client'
+                  ? 'bg-[var(--theme-primary)] text-white shadow-sm'
+                  : 'opacity-70 hover:opacity-100'
+              }`}
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>挂载新 SMB 共享</span>
+              <Link2 className="w-3.5 h-3.5" />
+              <span>挂载远端共享 ({smbMounts.length})</span>
             </button>
           </div>
         </div>
 
-        {/* SMB Mounts List */}
-        {smbMounts.length === 0 ? (
-          <div className="p-8 text-center glass-inner rounded-xl space-y-2.5">
-            <Network className="w-8 h-8 opacity-40 mx-auto text-blue-400" />
-            <p className="text-xs opacity-75 font-medium">暂无远程 SMB 挂载</p>
-            <p className="text-[11px] opacity-60 max-w-md mx-auto">
-              您可以添加局域网内其他 NAS 或电脑的共享文件夹，挂载成功后将自动出现在【NAS 文件管理器】中。
-            </p>
+        {/* TAB 1: Local SMB Server Sharing (对外共享) */}
+        {smbTab === 'server' && (
+          <div className="space-y-4">
+            {/* Server Status Bar */}
+            <div className="p-3.5 glass-inner rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center space-x-2.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="font-medium">
+                  {serverStatus?.serviceName || 'SMB 服务运行中'}
+                </span>
+                <span className="opacity-60">|</span>
+                <span className="opacity-80">主机 IP: <code className="font-mono text-[var(--theme-primary)] font-semibold">{serverStatus?.lanIp || '127.0.0.1'}</code></span>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={fetchLocalShares}
+                  className="p-2 glass-btn-secondary rounded-xl transition"
+                  title="刷新共享列表"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLocalSharesLoading ? 'animate-spin' : ''}`} />
+                </button>
+                <button
+                  onClick={() => setIsCreateLocalModalOpen(true)}
+                  className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-md transition"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>发布新 SMB 共享</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Local Shares List */}
+            {localShares.length === 0 ? (
+              <div className="p-8 text-center glass-inner rounded-xl space-y-2.5">
+                <Share2 className="w-8 h-8 opacity-40 mx-auto text-emerald-400" />
+                <p className="text-xs opacity-75 font-medium">暂无发布的本地 SMB 共享</p>
+                <p className="text-[11px] opacity-60 max-w-md mx-auto">
+                  您可以将 NAS 上的任何硬盘分区（如 D:\、E:\）或指定电影、相册文件夹对外共享，供局域网其他电脑、手机电视随时连入。
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-black/10 dark:divide-white/10 glass-inner rounded-xl overflow-hidden">
+                {localShares.map((share) => (
+                  <div key={share.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center space-x-2.5 flex-wrap">
+                        <span className="font-semibold text-sm">{share.name}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold ${
+                          share.readOnly
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                            : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        }`}>
+                          {share.readOnly ? '只读共享' : '完全控制 (读写)'}
+                        </span>
+
+                        {share.guestOk && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded glass-card opacity-80">匿名免密</span>
+                        )}
+                        {share.description && (
+                          <span className="text-[11px] opacity-60">({share.description})</span>
+                        )}
+                      </div>
+
+                      <div className="font-mono text-[11px] opacity-75 flex items-center space-x-2">
+                        <FolderTree className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <span>{share.path}</span>
+                      </div>
+
+                      <div className="flex items-center space-x-3 text-[11px] font-mono flex-wrap gap-y-1">
+                        <div className="flex items-center space-x-1.5 bg-black/15 dark:bg-white/10 px-2 py-1 rounded-lg">
+                          <span className="opacity-70">🪟 Windows:</span>
+                          <span className="text-[var(--theme-primary)] font-semibold">{share.lanUrlWindows}</span>
+                          <button
+                            onClick={() => handleCopyShareUrl(share.lanUrlWindows, `${share.id}_win`)}
+                            className="p-0.5 hover:text-white transition"
+                            title="复制 Windows 访问路径"
+                          >
+                            {copiedShareId === `${share.id}_win` ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          </button>
+                        </div>
+
+                        <div className="flex items-center space-x-1.5 bg-black/15 dark:bg-white/10 px-2 py-1 rounded-lg">
+                          <span className="opacity-70">🍎 Mac/手机:</span>
+                          <span className="text-[var(--theme-primary)] font-semibold">{share.lanUrlMac}</span>
+                          <button
+                            onClick={() => handleCopyShareUrl(share.lanUrlMac, `${share.id}_mac`)}
+                            className="p-0.5 hover:text-white transition"
+                            title="复制 Mac 访问路径"
+                          >
+                            {copiedShareId === `${share.id}_mac` ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2 shrink-0">
+                      <button
+                        onClick={() => handleDeleteLocalShare(share.name)}
+                        className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-400 text-xs font-medium transition"
+                        title="取消并停止此 SMB 共享"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>取消共享</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="divide-y divide-black/10 dark:divide-white/10 glass-inner rounded-xl overflow-hidden">
-            {smbMounts.map((smb) => {
-              const isActioning = smbActionId === smb.id;
-              return (
-                <div key={smb.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2.5 flex-wrap">
-                      <span className="font-semibold text-sm">{smb.name}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold uppercase flex items-center space-x-1 ${
-                        smb.status === 'mounted'
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                          : smb.status === 'error'
-                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                          : 'glass-card opacity-60'
-                      }`}>
-                        <span>{smb.status === 'mounted' ? '● 已挂载' : smb.status === 'error' ? '⚠ 异常' : '○ 未挂载'}</span>
-                      </span>
+        )}
 
-                      {smb.autoMount && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded glass-card opacity-70">开机自挂载</span>
-                      )}
+        {/* TAB 2: Remote SMB Client Mount (挂载远端) */}
+        {smbTab === 'client' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-xs opacity-75">
+                将局域网内其他 NAS、TrueNAS、Windows 共享或路由器挂载为本地磁盘，并在文件管理中直接访问
+              </p>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={fetchSmbMounts}
+                  className="p-2 glass-btn-secondary rounded-xl transition"
+                  title="刷新 SMB 挂载列表"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSmbLoading ? 'animate-spin' : ''}`} />
+                </button>
+                <button
+                  onClick={() => setIsAddSmbModalOpen(true)}
+                  className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-[var(--theme-primary)] hover:opacity-90 text-white text-xs font-semibold rounded-xl shadow-md transition"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>挂载新 SMB 共享</span>
+                </button>
+              </div>
+            </div>
+
+            {smbMounts.length === 0 ? (
+              <div className="p-8 text-center glass-inner rounded-xl space-y-2.5">
+                <Network className="w-8 h-8 opacity-40 mx-auto text-blue-400" />
+                <p className="text-xs opacity-75 font-medium">暂无挂载的远程 SMB 共享</p>
+                <p className="text-[11px] opacity-60 max-w-md mx-auto">
+                  您可以添加局域网内其他设备的共享文件夹，挂载成功后将自动出现在【NAS 文件管理器】中。
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-black/10 dark:divide-white/10 glass-inner rounded-xl overflow-hidden">
+                {smbMounts.map((smb) => {
+                  const isActioning = smbActionId === smb.id;
+                  return (
+                    <div key={smb.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-2.5 flex-wrap">
+                          <span className="font-semibold text-sm">{smb.name}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold uppercase flex items-center space-x-1 ${
+                            smb.status === 'mounted'
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : smb.status === 'error'
+                              ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                              : 'glass-card opacity-60'
+                          }`}>
+                            <span>{smb.status === 'mounted' ? '● 已挂载' : smb.status === 'error' ? '⚠ 异常' : '○ 未挂载'}</span>
+                          </span>
+
+                          {smb.autoMount && (
+                            <span className="text-[10px] px-1.5 py-0.2 rounded glass-card opacity-70">开机自挂载</span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center space-x-3 text-[11px] opacity-75 font-mono flex-wrap gap-y-1">
+                          <span>远程: // {smb.host}/{smb.shareName}</span>
+                          <span>➔</span>
+                          <span className="font-semibold text-[var(--theme-primary)]">本地挂载点: {smb.mountPoint}</span>
+                          {smb.username && <span>(用户: {smb.username})</span>}
+                        </div>
+
+                        {smb.errorMessage && (
+                          <p className="text-[11px] text-rose-400 opacity-90">{smb.errorMessage}</p>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center space-x-2 shrink-0">
+                        {smb.status === 'mounted' ? (
+                          <button
+                            disabled={isActioning}
+                            onClick={() => handleUnmountSmb(smb.id, smb.name)}
+                            className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs font-medium transition"
+                            title="卸载此 SMB 挂载"
+                          >
+                            <Unlink className="w-3.5 h-3.5" />
+                            <span>{isActioning ? '处理中...' : '卸载'}</span>
+                          </button>
+                        ) : (
+                          <button
+                            disabled={isActioning}
+                            onClick={() => handleMountSmb(smb.id)}
+                            className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition shadow-sm"
+                            title="挂载此 SMB 共享"
+                          >
+                            <Link2 className="w-3.5 h-3.5" />
+                            <span>{isActioning ? '正在连接...' : '立即挂载'}</span>
+                          </button>
+                        )}
+
+                        <button
+                          disabled={isActioning}
+                          onClick={() => handleDeleteSmb(smb.id, smb.name)}
+                          className="p-2 opacity-70 hover:opacity-100 hover:text-rose-400 rounded-lg transition"
+                          title="删除此 SMB 配置"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-
-                    <div className="flex items-center space-x-3 text-[11px] opacity-75 font-mono flex-wrap gap-y-1">
-                      <span>远程: // {smb.host}/{smb.shareName}</span>
-                      <span>➔</span>
-                      <span className="font-semibold text-[var(--theme-primary)]">挂载点: {smb.mountPoint}</span>
-                      {smb.username && <span>(用户: {smb.username})</span>}
-                    </div>
-
-                    {smb.errorMessage && (
-                      <p className="text-[11px] text-rose-400 opacity-90">{smb.errorMessage}</p>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center space-x-2 shrink-0">
-                    {smb.status === 'mounted' ? (
-                      <button
-                        disabled={isActioning}
-                        onClick={() => handleUnmountSmb(smb.id, smb.name)}
-                        className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs font-medium transition"
-                        title="卸载此 SMB 挂载"
-                      >
-                        <Unlink className="w-3.5 h-3.5" />
-                        <span>{isActioning ? '处理中...' : '卸载'}</span>
-                      </button>
-                    ) : (
-                      <button
-                        disabled={isActioning}
-                        onClick={() => handleMountSmb(smb.id)}
-                        className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition shadow-sm"
-                        title="挂载此 SMB 共享"
-                      >
-                        <Link2 className="w-3.5 h-3.5" />
-                        <span>{isActioning ? '正在连接...' : '立即挂载'}</span>
-                      </button>
-                    )}
-
-                    <button
-                      disabled={isActioning}
-                      onClick={() => handleDeleteSmb(smb.id, smb.name)}
-                      className="p-2 opacity-70 hover:opacity-100 hover:text-rose-400 rounded-lg transition"
-                      title="删除此 SMB 配置"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -941,7 +1142,7 @@ export const SettingsView: React.FC = () => {
         </form>
       </div>
 
-      {/* Add SMB Modal */}
+      {/* Add SMB Client Mount Modal */}
       <AddSmbMountModal
         isOpen={isAddSmbModalOpen}
         onClose={() => setIsAddSmbModalOpen(false)}
@@ -950,6 +1151,16 @@ export const SettingsView: React.FC = () => {
           fetchRoots();
         }}
         availableDrives={availableDrives}
+      />
+
+      {/* Create Local SMB Share Modal */}
+      <CreateLocalSmbShareModal
+        isOpen={isCreateLocalModalOpen}
+        onClose={() => setIsCreateLocalModalOpen(false)}
+        onSuccess={() => {
+          fetchLocalShares();
+        }}
+        availableRoots={roots}
       />
     </div>
   );

@@ -133,6 +133,19 @@ export interface SmbMount {
   createdAt: number;
 }
 
+export interface LocalSmbShare {
+  id: string;
+  name: string;
+  path: string;
+  readOnly: boolean;
+  guestOk: boolean;
+  description?: string;
+  createdAt: number;
+  isSpecial?: boolean;
+  lanUrlWindows: string;
+  lanUrlMac: string;
+}
+
 export interface ShareLink {
   id: string;
   path: string;

@@ -3,6 +3,60 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.smbController = exports.SmbController = void 0;
 const smb_service_1 = require("../services/smb.service");
 class SmbController {
+    // ==========================================
+    // SMB Server (Local Host Sharing)
+    // ==========================================
+    async getServerStatus(req, res) {
+        try {
+            const status = await smb_service_1.smbService.getServerStatus();
+            res.json(status);
+        }
+        catch (err) {
+            res.status(500).json({ error: err.message || '获取 SMB 服务端状态失败' });
+        }
+    }
+    async listLocalShares(req, res) {
+        try {
+            const shares = await smb_service_1.smbService.listLocalShares();
+            res.json({ shares });
+        }
+        catch (err) {
+            res.status(500).json({ error: err.message || '获取本地 SMB 共享列表失败' });
+        }
+    }
+    async createLocalShare(req, res) {
+        try {
+            const { name, path: dirPath, readOnly, guestOk, description } = req.body;
+            if (!name || !dirPath) {
+                res.status(400).json({ error: '请提供共享名称和本地文件夹路径' });
+                return;
+            }
+            const result = await smb_service_1.smbService.createLocalShare({
+                name,
+                path: dirPath,
+                readOnly: Boolean(readOnly),
+                guestOk: guestOk !== false,
+                description
+            });
+            res.json(result);
+        }
+        catch (err) {
+            res.status(500).json({ error: err.message || '创建本地 SMB 共享失败' });
+        }
+    }
+    async deleteLocalShare(req, res) {
+        try {
+            const name = req.params.name;
+            const result = await smb_service_1.smbService.deleteLocalShare(name);
+            res.json(result);
+        }
+        catch (err) {
+            res.status(500).json({ error: err.message || '关闭本地 SMB 共享失败' });
+        }
+    }
+    // ==========================================
+    // SMB Client (Mounting Remote Shares)
+    // ==========================================
     async list(req, res) {
         try {
             const mounts = await smb_service_1.smbService.listMounts();

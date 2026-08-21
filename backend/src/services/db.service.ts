@@ -2,7 +2,7 @@ import sqlite3 from 'sqlite3';
 import path from 'path';
 import fs from 'fs';
 import bcrypt from 'bcryptjs';
-import { ShareLink, StorageRoot, ProcessInfo, SmbMount } from '../types';
+import { ShareLink, StorageRoot, ProcessInfo, SmbMount, LocalSmbShare } from '../types';
 
 export class DbService {
   private db: sqlite3.Database;
@@ -93,7 +93,7 @@ export class DbService {
       this.db.run(`ALTER TABLE storage_roots ADD COLUMN type TEXT DEFAULT 'local'`, () => {});
       this.db.run(`ALTER TABLE storage_roots ADD COLUMN smb_mount_id TEXT`, () => {});
 
-      // SMB Mounts table
+      // SMB Mounts table (Remote Client)
       this.db.run(`
         CREATE TABLE IF NOT EXISTS smb_mounts (
           id TEXT PRIMARY KEY,
@@ -106,6 +106,19 @@ export class DbService {
           status TEXT DEFAULT 'unmounted',
           error_message TEXT,
           auto_mount INTEGER DEFAULT 1,
+          created_at INTEGER NOT NULL
+        )
+      `);
+
+      // SMB Local Server Shares table (Host Server)
+      this.db.run(`
+        CREATE TABLE IF NOT EXISTS smb_local_shares (
+          id TEXT PRIMARY KEY,
+          name TEXT UNIQUE NOT NULL,
+          path TEXT NOT NULL,
+          read_only INTEGER DEFAULT 0,
+          guest_ok INTEGER DEFAULT 1,
+          description TEXT,
           created_at INTEGER NOT NULL
         )
       `);
@@ -624,6 +637,58 @@ export class DbService {
   public deleteSmbMount(id: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
       this.db.run('DELETE FROM smb_mounts WHERE id = ?', [id], function (err) {
+        if (err) reject(err);
+        else resolve(this.changes > 0);
+      });
+    });
+  }
+
+  // Local SMB Server Shares Management
+  public getLocalSmbShares(): Promise<Array<{ id: string; name: string; path: string; readOnly: boolean; guestOk: boolean; description?: string; createdAt: number }>> {
+    return new Promise((resolve, reject) => {
+      this.db.all('SELECT id, name, path, read_only as readOnly, guest_ok as guestOk, description, created_at as createdAt FROM smb_local_shares ORDER BY created_at DESC', (err, rows: any[]) => {
+        if (err) reject(err);
+        else {
+          const list = (rows || []).map(r => ({
+            id: r.id,
+            name: r.name,
+            path: r.path,
+            readOnly: Boolean(r.readOnly),
+            guestOk: Boolean(r.guestOk),
+            description: r.description || undefined,
+            createdAt: r.createdAt
+          }));
+          resolve(list);
+        }
+      });
+    });
+  }
+
+  public saveLocalSmbShare(share: { id: string; name: string; path: string; readOnly: boolean; guestOk: boolean; description?: string; createdAt?: number }): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.db.run(
+        `INSERT OR REPLACE INTO smb_local_shares (id, name, path, read_only, guest_ok, description, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          share.id,
+          share.name,
+          share.path,
+          share.readOnly ? 1 : 0,
+          share.guestOk ? 1 : 0,
+          share.description || null,
+          share.createdAt || Date.now()
+        ],
+        (err) => {
+          if (err) reject(err);
+          else resolve();
+        }
+      );
+    });
+  }
+
+  public deleteLocalSmbShare(nameOrId: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.db.run('DELETE FROM smb_local_shares WHERE id = ? OR name = ?', [nameOrId, nameOrId], function (err) {
         if (err) reject(err);
         else resolve(this.changes > 0);
       });
