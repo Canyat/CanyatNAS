@@ -500,7 +500,7 @@ class SystemService {
         });
     }
     getVersion() {
-        return 'v1.3.1';
+        return 'v1.3.2';
     }
     // GitHub Auto-Update Check
     async checkGitHubUpdate() {

@@ -1,6 +1,6 @@
 {
   "name": "canyat-nas-backend",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Backend service for CanyatNAS",
   "main": "dist/server.js",
   "scripts": {

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-v1.3.1-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.3.2-blue.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20NAS%20%7C%20Linux%20%7C%20macOS%20%7C%20Docker-brightgreen.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3Dv18.0.0-orange.svg)
 ![License](https://img.shields.io/badge/license-MIT-purple.svg)
@@ -105,7 +105,7 @@
 
 ### 10. 👤 账户安全与 GitHub 在线自动更新 (双模热升级)
 - **账户修改**：在设置页中自由修改管理员用户名与登录密码。
-- **角落版本号与在线升级**：页面左下角实时显示当前系统版本（`v1.3.1`），在线检测 GitHub Releases 新版本，支持 Git 仓库同步与独立发行包自动下载覆盖升级。
+- **角落版本号与在线升级**：页面左下角实时显示当前系统版本（`v1.3.2`），在线检测 GitHub Releases 新版本，支持 Git 仓库同步与独立发行包自动下载覆盖升级。
 
 ---
 
