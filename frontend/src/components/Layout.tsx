@@ -22,12 +22,14 @@ import {
   Heart,
   ChevronDown,
   Check,
-  GitBranch
+  GitBranch,
+  Sliders,
+  RotateCcw
 } from 'lucide-react';
 import { SystemMetrics, ThemeMode } from '../types';
 import { wsClient } from '../services/ws';
 import { api } from '../services/api';
-import { themeService, THEME_PRESETS } from '../services/theme';
+import { themeService, THEME_PRESETS, AppearanceConfig } from '../services/theme';
 
 interface LayoutProps {
   currentTab: string;
@@ -45,7 +47,9 @@ export const Layout: React.FC<LayoutProps> = ({
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<ThemeMode>(themeService.getTheme());
+  const [appearance, setAppearance] = useState<AppearanceConfig>(themeService.getAppearance());
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+  const [isAppearanceMenuOpen, setIsAppearanceMenuOpen] = useState(false);
   const [username, setUsername] = useState('Administrator');
   const [version, setVersion] = useState('v1.2.0');
   const [hasUpdate, setHasUpdate] = useState(false);
@@ -57,8 +61,9 @@ export const Layout: React.FC<LayoutProps> = ({
     });
 
     // Subscribe to theme updates
-    const unsubTheme = themeService.subscribe((t) => {
+    const unsubTheme = themeService.subscribe((t, app) => {
       setCurrentTheme(t);
+      setAppearance(app);
     });
 
     // Fetch user and version
@@ -238,7 +243,7 @@ export const Layout: React.FC<LayoutProps> = ({
 
       {/* Main Content Area */}
       <div className="relative z-10 flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top Header with Theme Switcher */}
+        {/* Top Header with Theme Switcher & Appearance Slider */}
         <header className="relative z-50 flex items-center justify-between px-6 py-3.5 glass-panel border-b border-slate-800/60 shrink-0">
           <div className="flex items-center space-x-3">
             {/* Mobile menu trigger */}
@@ -256,12 +261,152 @@ export const Layout: React.FC<LayoutProps> = ({
             </div>
           </div>
 
-          {/* Right Header: Theme Switcher & Actions */}
-          <div className="flex items-center space-x-3">
+          {/* Right Header: Theme & Appearance Dropdowns */}
+          <div className="flex items-center space-x-2.5">
+            {/* Appearance Fine-Tuning Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setIsAppearanceMenuOpen(!isAppearanceMenuOpen);
+                  setIsThemeMenuOpen(false);
+                }}
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl glass-card text-xs font-medium text-slate-300 hover:text-white hover:border-slate-600 transition"
+                title="调节卡片透明度与磨砂质感"
+              >
+                <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                <span className="hidden sm:inline">透明磨砂度 ({Math.round(appearance.cardOpacity * 100)}%)</span>
+              </button>
+
+              {isAppearanceMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-[90]"
+                    onClick={() => setIsAppearanceMenuOpen(false)}
+                  />
+
+                  <div className="absolute right-0 mt-2 w-72 rounded-2xl glass-panel border border-slate-700/80 shadow-2xl p-4 space-y-3.5 z-[100] animate-in fade-in text-xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                      <span className="font-semibold text-slate-200">卡片质感微调</span>
+                      <button
+                        onClick={() => {
+                          themeService.resetAppearance();
+                          setAppearance(themeService.getAppearance());
+                        }}
+                        className="text-[10px] text-blue-400 hover:underline flex items-center space-x-1"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>重置</span>
+                      </button>
+                    </div>
+
+                    {/* Quick presets */}
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <button
+                        onClick={() => {
+                          const val = { cardOpacity: 0.35, cardBlur: 20, bgMaskOpacity: 0.5 };
+                          themeService.setAppearance(val);
+                          setAppearance(val);
+                        }}
+                        className="py-1 px-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-[10px] text-center text-slate-300 transition"
+                      >
+                        💎 晶莹超透
+                      </button>
+                      <button
+                        onClick={() => {
+                          const val = { cardOpacity: 0.55, cardBlur: 16, bgMaskOpacity: 0.65 };
+                          themeService.setAppearance(val);
+                          setAppearance(val);
+                        }}
+                        className="py-1 px-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 text-[10px] text-center text-blue-300 transition font-medium"
+                      >
+                        ✨ 优雅磨砂
+                      </button>
+                      <button
+                        onClick={() => {
+                          const val = { cardOpacity: 0.8, cardBlur: 10, bgMaskOpacity: 0.8 };
+                          themeService.setAppearance(val);
+                          setAppearance(val);
+                        }}
+                        className="py-1 px-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-[10px] text-center text-slate-300 transition"
+                      >
+                        🎯 舒适平衡
+                      </button>
+                    </div>
+
+                    {/* Slider 1: Card Opacity */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-slate-300">
+                        <span>卡片透明度</span>
+                        <span className="font-mono text-blue-400 font-bold">{Math.round(appearance.cardOpacity * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="0.95"
+                        step="0.05"
+                        value={appearance.cardOpacity}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          themeService.setAppearance({ cardOpacity: val });
+                          setAppearance(prev => ({ ...prev, cardOpacity: val }));
+                        }}
+                        className="w-full accent-blue-500 cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Slider 2: Blur */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-slate-300">
+                        <span>毛玻璃虚化</span>
+                        <span className="font-mono text-purple-400 font-bold">{appearance.cardBlur}px</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="30"
+                        step="2"
+                        value={appearance.cardBlur}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          themeService.setAppearance({ cardBlur: val });
+                          setAppearance(prev => ({ ...prev, cardBlur: val }));
+                        }}
+                        className="w-full accent-purple-500 cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Slider 3: Mask Dimming */}
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-slate-300">
+                        <span>背景壁纸遮罩</span>
+                        <span className="font-mono text-pink-400 font-bold">{Math.round(appearance.bgMaskOpacity * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="0.95"
+                        step="0.05"
+                        value={appearance.bgMaskOpacity}
+                        onChange={(e) => {
+                          const val = parseFloat(e.target.value);
+                          themeService.setAppearance({ bgMaskOpacity: val });
+                          setAppearance(prev => ({ ...prev, bgMaskOpacity: val }));
+                        }}
+                        className="w-full accent-pink-500 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* Theme Dropdown */}
             <div className="relative">
               <button
-                onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
+                onClick={() => {
+                  setIsThemeMenuOpen(!isThemeMenuOpen);
+                  setIsAppearanceMenuOpen(false);
+                }}
                 className="flex items-center space-x-2 px-3 py-1.5 rounded-xl glass-card text-xs font-medium text-slate-200 hover:border-slate-600 transition"
               >
                 {getThemeIcon(currentTheme)}
@@ -273,13 +418,11 @@ export const Layout: React.FC<LayoutProps> = ({
 
               {isThemeMenuOpen && (
                 <>
-                  {/* Invisible full-screen backdrop to handle click outside */}
                   <div
                     className="fixed inset-0 z-[90]"
                     onClick={() => setIsThemeMenuOpen(false)}
                   />
 
-                  {/* Dropdown Menu */}
                   <div
                     className="absolute right-0 mt-2 w-52 rounded-2xl glass-panel border border-slate-700/80 shadow-2xl p-1.5 space-y-1 z-[100] animate-in fade-in"
                   >

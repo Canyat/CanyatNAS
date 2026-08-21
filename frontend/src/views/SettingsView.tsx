@@ -20,11 +20,12 @@ import {
   Download,
   RefreshCw,
   GitBranch,
-  ExternalLink
+  ExternalLink,
+  RotateCcw
 } from 'lucide-react';
 import { StorageRoot, ThemeMode, SystemVersionInfo } from '../types';
 import { api } from '../services/api';
-import { themeService, THEME_PRESETS } from '../services/theme';
+import { themeService, THEME_PRESETS, AppearanceConfig } from '../services/theme';
 
 export const SettingsView: React.FC = () => {
   const [roots, setRoots] = useState<StorageRoot[]>([]);
@@ -52,8 +53,9 @@ export const SettingsView: React.FC = () => {
   const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isChangingPass, setIsChangingPass] = useState(false);
 
-  // Theme
+  // Theme & Appearance
   const [currentTheme, setCurrentTheme] = useState<ThemeMode>(themeService.getTheme());
+  const [appearance, setAppearance] = useState<AppearanceConfig>(themeService.getAppearance());
 
   // Version & Updates
   const [versionInfo, setVersionInfo] = useState<SystemVersionInfo | null>(null);
@@ -91,8 +93,9 @@ export const SettingsView: React.FC = () => {
     fetchSettings();
     fetchUserInfo();
 
-    const unsub = themeService.subscribe((t) => {
+    const unsub = themeService.subscribe((t, app) => {
       setCurrentTheme(t);
+      setAppearance(app);
     });
 
     api.getSystemVersion().then(v => {
@@ -246,19 +249,33 @@ export const SettingsView: React.FC = () => {
         </p>
       </div>
 
-      {/* 1. Theme Customization Gallery */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
-        <div className="flex items-center space-x-2.5">
-          <div className="p-2 bg-gradient-to-tr from-purple-500/20 to-pink-500/20 text-purple-400 rounded-xl">
-            <Palette className="w-5 h-5" />
+      {/* 1. Theme Customization Gallery & Glassmorphism Settings */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-gradient-to-tr from-purple-500/20 to-pink-500/20 text-purple-400 rounded-xl">
+              <Palette className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-white">主题风格定制 (5 大视觉体系)</h3>
+              <p className="text-xs text-slate-400">一键切换并实时生效，支持水墨国风、二次元、极简浅色与樱花粉</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-bold text-sm text-white">主题风格定制 (5 大视觉体系)</h3>
-            <p className="text-xs text-slate-400">一键切换并实时生效，支持水墨国风、二次元、极简浅色与樱花粉</p>
-          </div>
+
+          <button
+            onClick={() => {
+              themeService.resetAppearance();
+              setAppearance(themeService.getAppearance());
+            }}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>重置外观默认值</span>
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-2">
+        {/* Theme Preset Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
           {THEME_PRESETS.map((preset) => {
             const isSelected = currentTheme === preset.id;
             return (
@@ -304,6 +321,122 @@ export const SettingsView: React.FC = () => {
               </div>
             );
           })}
+        </div>
+
+        {/* Glassmorphism & Card Opacity Customizer */}
+        <div className="pt-4 border-t border-slate-800/80 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center space-x-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <h4 className="font-semibold text-sm text-white">卡片透明度与磨砂玻璃质感调节</h4>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="flex items-center space-x-2 text-xs">
+              <span className="text-slate-500 text-[11px]">快捷质感:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  const val = { cardOpacity: 0.35, cardBlur: 20, bgMaskOpacity: 0.5 };
+                  themeService.setAppearance(val);
+                  setAppearance(val);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+              >
+                💎 晶莹超透 (35%)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const val = { cardOpacity: 0.55, cardBlur: 16, bgMaskOpacity: 0.65 };
+                  themeService.setAppearance(val);
+                  setAppearance(val);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 transition"
+              >
+                ✨ 优雅磨砂 (55%)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const val = { cardOpacity: 0.8, cardBlur: 10, bgMaskOpacity: 0.8 };
+                  themeService.setAppearance(val);
+                  setAppearance(val);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+              >
+                🎯 舒适平衡 (80%)
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 p-4 bg-slate-950/60 rounded-2xl border border-slate-800/60 text-xs">
+            {/* Slider 1: Card Opacity */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-slate-300 font-medium">
+                <span>卡片不透明度 (Opacity)</span>
+                <span className="font-mono text-blue-400 font-bold">{Math.round(appearance.cardOpacity * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0.2"
+                max="0.95"
+                step="0.05"
+                value={appearance.cardOpacity}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  themeService.setAppearance({ cardOpacity: val });
+                  setAppearance(prev => ({ ...prev, cardOpacity: val }));
+                }}
+                className="w-full accent-blue-500 cursor-pointer"
+              />
+              <p className="text-[11px] text-slate-500">数值越低卡片越通透，能更清晰地透出背景原画</p>
+            </div>
+
+            {/* Slider 2: Backdrop Blur */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-slate-300 font-medium">
+                <span>毛玻璃模糊度 (Glass Blur)</span>
+                <span className="font-mono text-purple-400 font-bold">{appearance.cardBlur}px</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="30"
+                step="2"
+                value={appearance.cardBlur}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  themeService.setAppearance({ cardBlur: val });
+                  setAppearance(prev => ({ ...prev, cardBlur: val }));
+                }}
+                className="w-full accent-purple-500 cursor-pointer"
+              />
+              <p className="text-[11px] text-slate-500">调节磨砂玻璃背景的虚化程度，增强文字可读性</p>
+            </div>
+
+            {/* Slider 3: Background Mask */}
+            <div className="space-y-2">
+              <div className="flex justify-between text-slate-300 font-medium">
+                <span>壁纸遮罩浓度 (Backdrop Mask)</span>
+                <span className="font-mono text-pink-400 font-bold">{Math.round(appearance.bgMaskOpacity * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min="0.2"
+                max="0.95"
+                step="0.05"
+                value={appearance.bgMaskOpacity}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  themeService.setAppearance({ bgMaskOpacity: val });
+                  setAppearance(prev => ({ ...prev, bgMaskOpacity: val }));
+                }}
+                className="w-full accent-pink-500 cursor-pointer"
+              />
+              <p className="text-[11px] text-slate-500">调节背景壁纸暗度，兼顾高对比度与艺术视觉</p>
+            </div>
+          </div>
         </div>
       </div>
 

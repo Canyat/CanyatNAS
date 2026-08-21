@@ -7,7 +7,7 @@ interface MetricCardProps {
   unit?: string;
   subtitle?: string;
   icon: LucideIcon;
-  color?: 'blue' | 'green' | 'amber' | 'purple' | 'red';
+  color?: 'theme' | 'blue' | 'green' | 'amber' | 'purple' | 'red';
   history?: number[];
   progressPercent?: number;
   badge?: string;
@@ -19,7 +19,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   unit = '',
   subtitle,
   icon: Icon,
-  color = 'blue',
+  color = 'theme',
   history = [],
   progressPercent,
   badge
@@ -27,44 +27,52 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const colorStyles = {
+    theme: {
+      border: 'border-[var(--theme-primary)]/30',
+      bgGlow: 'bg-[var(--theme-primary)]/15',
+      text: 'text-[var(--theme-primary)]',
+      stroke: 'var(--theme-primary)',
+      fill: 'rgba(var(--card-border-rgb), 0.18)',
+      progress: 'bg-[var(--theme-primary)]',
+    },
     blue: {
-      border: 'border-blue-500/20',
-      bgGlow: 'bg-blue-500/10',
+      border: 'border-blue-500/25',
+      bgGlow: 'bg-blue-500/15',
       text: 'text-blue-400',
       stroke: '#3b82f6',
-      fill: 'rgba(59, 130, 246, 0.15)',
+      fill: 'rgba(59, 130, 246, 0.18)',
       progress: 'bg-blue-500',
     },
     green: {
-      border: 'border-emerald-500/20',
-      bgGlow: 'bg-emerald-500/10',
+      border: 'border-emerald-500/25',
+      bgGlow: 'bg-emerald-500/15',
       text: 'text-emerald-400',
       stroke: '#10b981',
-      fill: 'rgba(16, 185, 129, 0.15)',
+      fill: 'rgba(16, 185, 129, 0.18)',
       progress: 'bg-emerald-500',
     },
     amber: {
-      border: 'border-amber-500/20',
-      bgGlow: 'bg-amber-500/10',
+      border: 'border-amber-500/25',
+      bgGlow: 'bg-amber-500/15',
       text: 'text-amber-400',
       stroke: '#f59e0b',
-      fill: 'rgba(245, 158, 11, 0.15)',
+      fill: 'rgba(245, 158, 11, 0.18)',
       progress: 'bg-amber-500',
     },
     purple: {
-      border: 'border-purple-500/20',
-      bgGlow: 'bg-purple-500/10',
+      border: 'border-purple-500/25',
+      bgGlow: 'bg-purple-500/15',
       text: 'text-purple-400',
       stroke: '#a855f7',
-      fill: 'rgba(168, 85, 247, 0.15)',
+      fill: 'rgba(168, 85, 247, 0.18)',
       progress: 'bg-purple-500',
     },
     red: {
-      border: 'border-rose-500/20',
-      bgGlow: 'bg-rose-500/10',
+      border: 'border-rose-500/25',
+      bgGlow: 'bg-rose-500/15',
       text: 'text-rose-400',
       stroke: '#f43f5e',
-      fill: 'rgba(244, 63, 94, 0.15)',
+      fill: 'rgba(244, 63, 94, 0.18)',
       progress: 'bg-rose-500',
     }
   }[color];
@@ -95,20 +103,30 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       ctx.lineTo(x, y);
     }
 
-    ctx.strokeStyle = colorStyles.stroke;
-    ctx.lineWidth = 2;
+    // Resolve color if using CSS variable
+    let resolvedStroke = colorStyles.stroke;
+    if (resolvedStroke.startsWith('var(')) {
+      resolvedStroke = getComputedStyle(document.documentElement).getPropertyValue('--theme-primary').trim() || '#3b82f6';
+    }
+
+    ctx.strokeStyle = resolvedStroke;
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
     // Area fill
     ctx.lineTo(width, height);
     ctx.lineTo(0, height);
     ctx.closePath();
-    ctx.fillStyle = colorStyles.fill;
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, resolvedStroke + '40');
+    gradient.addColorStop(1, resolvedStroke + '05');
+    ctx.fillStyle = gradient;
     ctx.fill();
   }, [history, colorStyles]);
 
   return (
-    <div className={`relative overflow-hidden rounded-2xl bg-slate-900/80 backdrop-blur-md border ${colorStyles.border} p-5 shadow-lg transition-all duration-200 hover:shadow-xl`}>
+    <div className={`relative overflow-hidden rounded-2xl glass-card border ${colorStyles.border} p-5 shadow-lg transition-all duration-200 hover:shadow-2xl`}>
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-3">
           <div className={`p-2.5 rounded-xl ${colorStyles.bgGlow} ${colorStyles.text}`}>
@@ -133,7 +151,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       {/* Progress Bar (if provided) */}
       {progressPercent !== undefined && (
         <div className="mt-4">
-          <div className="w-full bg-slate-800/80 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-black/30 rounded-full h-2 overflow-hidden border border-white/5">
             <div
               className={`h-full rounded-full ${colorStyles.progress} transition-all duration-500 ease-out`}
               style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}
@@ -150,7 +168,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       )}
 
       {subtitle && (
-        <p className="mt-2 text-xs text-slate-400 truncate flex items-center justify-between">
+        <p className="mt-2.5 text-xs text-slate-400 truncate flex items-center justify-between">
           <span>{subtitle}</span>
         </p>
       )}
