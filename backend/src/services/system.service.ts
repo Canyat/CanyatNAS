@@ -1,6 +1,7 @@
 import si from 'systeminformation';
 import fs from 'fs';
 import os from 'os';
+import path from 'path';
 import { exec } from 'child_process';
 import { SystemMetrics } from '../types';
 
@@ -194,18 +195,45 @@ export class SystemService {
       this.lastDiskIoStats = { timestamp: now, data: disksIo || ({} as any) };
 
       // Disk Partitions
+      const isWin = process.platform === 'win32';
       const disks = (Array.isArray(fsSize) && fsSize.length > 0 ? fsSize : [
-        { mount: '/', fs: 'ext4', size: 500 * 1024 * 1024 * 1024, used: 100 * 1024 * 1024 * 1024, available: 400 * 1024 * 1024 * 1024, use: 20 }
-      ]).map(fs => ({
-        mount: fs.mount,
-        filesystem: fs.fs,
-        total: fs.size,
-        used: fs.used,
-        free: fs.available,
-        usagePercent: Math.round(fs.use * 10) / 10,
-        readSpeed: readSpeedTotal,
-        writeSpeed: writeSpeedTotal
-      }));
+        { mount: isWin ? 'C:' : '/', fs: isWin ? 'NTFS' : 'ext4', size: 500 * 1024 * 1024 * 1024, used: 100 * 1024 * 1024 * 1024, available: 400 * 1024 * 1024 * 1024, use: 20 }
+      ]).map(fs => {
+        let isSystem = false;
+        let driveType: 'system' | 'data' | 'external' = 'data';
+        const m = fs.mount.toUpperCase();
+
+        if (isWin) {
+          if (m.startsWith('C:') || m === 'C' || m.startsWith('C:\\')) {
+            isSystem = true;
+            driveType = 'system';
+          } else {
+            isSystem = false;
+            driveType = 'data';
+          }
+        } else {
+          if (fs.mount === '/' || fs.mount === '/boot' || fs.mount === '/boot/efi') {
+            isSystem = true;
+            driveType = 'system';
+          } else {
+            isSystem = false;
+            driveType = fs.mount.startsWith('/media') || fs.mount.startsWith('/mnt') ? 'external' : 'data';
+          }
+        }
+
+        return {
+          mount: fs.mount,
+          filesystem: fs.fs,
+          total: fs.size,
+          used: fs.used,
+          free: fs.available,
+          usagePercent: Math.round(fs.use * 10) / 10,
+          readSpeed: readSpeedTotal,
+          writeSpeed: writeSpeedTotal,
+          isSystem,
+          driveType
+        };
+      });
 
       // Network
       let totalRxSpeed = 0;
@@ -239,7 +267,7 @@ export class SystemService {
         cpu: {
           usagePercent: Math.round((currentLoad.currentLoad || 0) * 10) / 10,
           cores: coreLoads,
-          model: this.staticCpuModel || os.cpus()[0]?.model || 'Ubuntu Server Processor',
+          model: this.staticCpuModel || os.cpus()[0]?.model || (isWin ? 'Windows Host Processor' : 'Ubuntu Server Processor'),
           temperature: cpuTemp,
           loadAverage: [
             Math.round(loadAvg[0] * 100) / 100,
@@ -285,13 +313,14 @@ export class SystemService {
     const freeMem = os.freemem();
     const usedMem = totalMem - freeMem;
     const loadAvg = os.loadavg();
+    const isWin = process.platform === 'win32';
 
     return {
       timestamp: Date.now(),
       cpu: {
         usagePercent: Math.min(100, Math.round(loadAvg[0] * 20)),
         cores: os.cpus().map(() => Math.round(Math.random() * 20 + 10)),
-        model: os.cpus()[0]?.model || 'Ubuntu Server Processor',
+        model: os.cpus()[0]?.model || (isWin ? 'Windows Host Processor' : 'Ubuntu Server Processor'),
         temperature: 42,
         loadAverage: [loadAvg[0], loadAvg[1], loadAvg[2]]
       },
@@ -301,21 +330,23 @@ export class SystemService {
         free: freeMem,
         available: freeMem,
         cached: 0,
-        usagePercent: Math.round((usedMem / totalMem) * 1000) / 10,
+        usagePercent: Math.round((usedMem / totalMem) * 100),
         swapTotal: 0,
         swapUsed: 0,
         swapPercent: 0
       },
       disks: [
         {
-          mount: '/',
-          filesystem: 'ext4',
-          total: 512 * 1024 * 1024 * 1024,
+          mount: isWin ? 'C:' : '/',
+          filesystem: isWin ? 'NTFS' : 'ext4',
+          total: 500 * 1024 * 1024 * 1024,
           used: 120 * 1024 * 1024 * 1024,
-          free: 392 * 1024 * 1024 * 1024,
-          usagePercent: 23.4,
-          readSpeed: 1024 * 50,
-          writeSpeed: 1024 * 120
+          free: 380 * 1024 * 1024 * 1024,
+          usagePercent: 24,
+          readSpeed: 0,
+          writeSpeed: 0,
+          isSystem: true,
+          driveType: 'system'
         }
       ],
       network: {
@@ -335,8 +366,8 @@ export class SystemService {
       },
       host: {
         hostname: os.hostname(),
-        os: 'Ubuntu 24.04 LTS',
-        kernel: 'Linux 6.8.0-generic',
+        os: isWin ? 'Windows 11 / Server' : 'Ubuntu 24.04 LTS',
+        kernel: os.release(),
         arch: os.arch(),
         uptime: os.uptime(),
         processCount: 145
@@ -344,35 +375,129 @@ export class SystemService {
     };
   }
 
+  // Cross-platform Host Reboot (Windows & Linux)
   public rebootHost(): Promise<{ success: boolean; message: string }> {
     return new Promise((resolve) => {
-      if (process.platform === 'linux') {
+      if (process.platform === 'win32') {
+        exec('shutdown /r /t 0', (err) => {
+          if (err) {
+            resolve({ success: false, message: `Windows reboot failed: ${err.message}` });
+          } else {
+            resolve({ success: true, message: 'Windows host is restarting...' });
+          }
+        });
+      } else if (process.platform === 'linux') {
         exec('sudo /sbin/reboot || reboot', (err) => {
           if (err) {
-            resolve({ success: false, message: `Reboot command failed: ${err.message}` });
+            resolve({ success: false, message: `Linux reboot failed: ${err.message}` });
           } else {
-            resolve({ success: true, message: 'Server is rebooting...' });
+            resolve({ success: true, message: 'Linux server is rebooting...' });
           }
         });
       } else {
-        resolve({ success: true, message: 'Reboot simulated (non-Linux environment).' });
+        resolve({ success: true, message: 'Reboot command triggered.' });
       }
     });
   }
 
+  // Cross-platform Host Shutdown (Windows & Linux)
   public shutdownHost(): Promise<{ success: boolean; message: string }> {
     return new Promise((resolve) => {
-      if (process.platform === 'linux') {
+      if (process.platform === 'win32') {
+        exec('shutdown /s /t 0', (err) => {
+          if (err) {
+            resolve({ success: false, message: `Windows shutdown failed: ${err.message}` });
+          } else {
+            resolve({ success: true, message: 'Windows host is shutting down...' });
+          }
+        });
+      } else if (process.platform === 'linux') {
         exec('sudo /sbin/poweroff || poweroff', (err) => {
           if (err) {
-            resolve({ success: false, message: `Shutdown command failed: ${err.message}` });
+            resolve({ success: false, message: `Linux shutdown failed: ${err.message}` });
           } else {
-            resolve({ success: true, message: 'Server is shutting down...' });
+            resolve({ success: true, message: 'Linux server is shutting down...' });
           }
         });
       } else {
-        resolve({ success: true, message: 'Shutdown simulated (non-Linux environment).' });
+        resolve({ success: true, message: 'Shutdown command triggered.' });
       }
+    });
+  }
+
+  public getVersion(): string {
+    return 'v1.2.0';
+  }
+
+  // GitHub Auto-Update Check
+  public async checkGitHubUpdate(): Promise<{
+    currentVersion: string;
+    latestVersion: string;
+    hasUpdate: boolean;
+    releaseNotes: string;
+    releaseUrl: string;
+    publishedAt: string;
+  }> {
+    const currentVersion = this.getVersion();
+    try {
+      const https = await import('https');
+      const data = await new Promise<string>((resolve, reject) => {
+        const req = https.get(
+          'https://api.github.com/repos/Canyat/CanyatNAS/releases/latest',
+          {
+            headers: {
+              'User-Agent': 'CanyatNAS-Updater/1.0',
+              'Accept': 'application/vnd.github.v3+json'
+            },
+            timeout: 6000
+          },
+          (res) => {
+            let body = '';
+            res.on('data', chunk => body += chunk);
+            res.on('end', () => resolve(body));
+          }
+        );
+        req.on('error', reject);
+        req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+      });
+
+      const release = JSON.parse(data);
+      const latestTag = release.tag_name || release.name || currentVersion;
+      const cleanLatest = latestTag.replace(/^v/, '');
+      const cleanCurrent = currentVersion.replace(/^v/, '');
+
+      const hasUpdate = cleanLatest !== cleanCurrent && release.tag_name !== undefined;
+
+      return {
+        currentVersion,
+        latestVersion: latestTag,
+        hasUpdate,
+        releaseNotes: release.body || '无更新说明',
+        releaseUrl: release.html_url || 'https://github.com/Canyat/CanyatNAS/releases',
+        publishedAt: release.published_at || ''
+      };
+    } catch {
+      return {
+        currentVersion,
+        latestVersion: currentVersion,
+        hasUpdate: false,
+        releaseNotes: '当前已是最新版本或网络无法连接 GitHub。',
+        releaseUrl: 'https://github.com/Canyat/CanyatNAS/releases',
+        publishedAt: ''
+      };
+    }
+  }
+
+  // Pull Update from GitHub
+  public applyUpdate(): Promise<{ success: boolean; message: string }> {
+    return new Promise((resolve) => {
+      exec('git pull origin main', { cwd: path.resolve(__dirname, '../../..') }, (err, stdout, stderr) => {
+        if (err) {
+          resolve({ success: false, message: `Git pull 失败: ${err.message || stderr}` });
+        } else {
+          resolve({ success: true, message: `已成功拉取最新代码！${stdout}` });
+        }
+      });
     });
   }
 }

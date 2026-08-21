@@ -3,6 +3,7 @@ import { api } from './services/api';
 import { Layout } from './components/Layout';
 import { DashboardView } from './views/DashboardView';
 import { DockerView } from './views/DockerView';
+import { ProcessManagerView } from './views/ProcessManagerView';
 import { AppStoreView } from './views/AppStoreView';
 import { FileExplorerView } from './views/FileExplorerView';
 import { ShareManagerView } from './views/ShareManagerView';
@@ -70,8 +71,9 @@ export const App: React.FC = () => {
       onTabChange={setCurrentTab}
       onLogout={handleLogout}
     >
-      {currentTab === 'dashboard' && <DashboardView />}
+      {currentTab === 'dashboard' && <DashboardView onNavigateTab={setCurrentTab} />}
       {currentTab === 'docker' && <DockerView onNavigateToAppStore={() => setCurrentTab('appstore')} />}
+      {currentTab === 'processes' && <ProcessManagerView />}
       {currentTab === 'appstore' && <AppStoreView onDeployed={() => setCurrentTab('docker')} />}
       {currentTab === 'files' && <FileExplorerView />}
       {currentTab === 'shares' && <ShareManagerView />}

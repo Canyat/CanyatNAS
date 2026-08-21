@@ -11,6 +11,7 @@ import { dockerController } from './controllers/docker.controller';
 import { filesController, uploadMiddleware } from './controllers/files.controller';
 import { shareController } from './controllers/share.controller';
 import { settingsController } from './controllers/settings.controller';
+import { processController } from './controllers/process.controller';
 import { setupWebSockets } from './websocket';
 
 dotenv.config();
@@ -41,11 +42,24 @@ api.use(authMiddleware as any);
 // Auth
 api.get('/auth/me', (req, res) => authController.getMe(req as any, res));
 api.post('/auth/change-password', (req, res) => authController.changePassword(req as any, res));
+api.post('/auth/change-username', (req, res) => authController.changeUsername(req as any, res));
 
-// System & Hardware Metrics
+// System & Hardware Metrics & Auto-Update
 api.get('/system/metrics', (req, res) => systemController.getMetrics(req, res));
+api.get('/system/version', (req, res) => systemController.getVersion(req, res));
+api.post('/system/check-update', (req, res) => systemController.checkUpdate(req, res));
+api.post('/system/apply-update', (req, res) => systemController.applyUpdate(req, res));
 api.post('/system/reboot', (req, res) => systemController.reboot(req, res));
 api.post('/system/shutdown', (req, res) => systemController.shutdown(req, res));
+
+// Custom Process & App Manager (.exe, .bat, .sh, Python)
+api.get('/processes', (req, res) => processController.list(req, res));
+api.post('/processes', (req, res) => processController.create(req, res));
+api.post('/processes/:id/start', (req, res) => processController.start(req, res));
+api.post('/processes/:id/stop', (req, res) => processController.stop(req, res));
+api.post('/processes/:id/restart', (req, res) => processController.restart(req, res));
+api.delete('/processes/:id', (req, res) => processController.delete(req, res));
+api.get('/processes/:id/logs', (req, res) => processController.getLogs(req, res));
 
 // Docker Manager
 api.get('/docker/status', (req, res) => dockerController.getStatus(req, res));

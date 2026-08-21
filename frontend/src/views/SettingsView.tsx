@@ -9,13 +9,22 @@ import {
   Check,
   AlertCircle,
   Save,
-  Copy,
-  RotateCcw,
-  Power,
-  ShieldCheck
+  Palette,
+  Sparkles,
+  Feather,
+  Sun,
+  Moon,
+  Heart,
+  User,
+  ShieldCheck,
+  Download,
+  RefreshCw,
+  GitBranch,
+  ExternalLink
 } from 'lucide-react';
-import { StorageRoot } from '../types';
+import { StorageRoot, ThemeMode, SystemVersionInfo } from '../types';
 import { api } from '../services/api';
+import { themeService, THEME_PRESETS } from '../services/theme';
 
 export const SettingsView: React.FC = () => {
   const [roots, setRoots] = useState<StorageRoot[]>([]);
@@ -29,6 +38,13 @@ export const SettingsView: React.FC = () => {
   const [serverTitle, setServerTitle] = useState('CanyatNAS');
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
+  // Account
+  const [currentUsername, setCurrentUsername] = useState('admin');
+  const [newUsername, setNewUsername] = useState('');
+  const [usernamePassword, setUsernamePassword] = useState('');
+  const [usernameMsg, setUsernameMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isChangingUser, setIsChangingUser] = useState(false);
+
   // Password
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -36,13 +52,20 @@ export const SettingsView: React.FC = () => {
   const [passwordMsg, setPasswordMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isChangingPass, setIsChangingPass] = useState(false);
 
+  // Theme
+  const [currentTheme, setCurrentTheme] = useState<ThemeMode>(themeService.getTheme());
+
+  // Version & Updates
+  const [versionInfo, setVersionInfo] = useState<SystemVersionInfo | null>(null);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [updateMsg, setUpdateMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
+
   const fetchRoots = async () => {
     try {
       const list = await api.getStorageRoots();
       setRoots(list);
-    } catch {
-      // Ignore
-    }
+    } catch {}
   };
 
   const fetchSettings = async () => {
@@ -51,14 +74,38 @@ export const SettingsView: React.FC = () => {
       setWebdavEnabled(res.webdavEnabled);
       setWebdavPort(res.webdavPort);
       setServerTitle(res.serverTitle);
-    } catch {
-      // Ignore
-    }
+    } catch {}
+  };
+
+  const fetchUserInfo = async () => {
+    try {
+      const user = await api.getMe();
+      if (user && user.username) {
+        setCurrentUsername(user.username);
+      }
+    } catch {}
   };
 
   useEffect(() => {
     fetchRoots();
     fetchSettings();
+    fetchUserInfo();
+
+    const unsub = themeService.subscribe((t) => {
+      setCurrentTheme(t);
+    });
+
+    api.getSystemVersion().then(v => {
+      setVersionInfo({
+        currentVersion: v.version,
+        latestVersion: v.version,
+        hasUpdate: false
+      });
+    }).catch(() => {});
+
+    return () => {
+      unsub();
+    };
   }, []);
 
   const handleAddRoot = async (e: React.FormEvent) => {
@@ -102,6 +149,27 @@ export const SettingsView: React.FC = () => {
     setIsSavingSettings(false);
   };
 
+  const handleChangeUsername = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUsernameMsg(null);
+    if (!newUsername.trim() || newUsername.trim() === currentUsername) {
+      setUsernameMsg({ type: 'error', text: '请输入不同于当前的新用户名' });
+      return;
+    }
+
+    setIsChangingUser(true);
+    try {
+      const res = await api.changeUsername(newUsername.trim(), usernamePassword);
+      setUsernameMsg({ type: 'success', text: `用户名修改成功，当前登录账号为: ${res.user.username}` });
+      setCurrentUsername(res.user.username);
+      setNewUsername('');
+      setUsernamePassword('');
+    } catch (err: any) {
+      setUsernameMsg({ type: 'error', text: err.message || '修改用户名失败' });
+    }
+    setIsChangingUser(false);
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordMsg(null);
@@ -124,19 +192,308 @@ export const SettingsView: React.FC = () => {
     setIsChangingPass(false);
   };
 
+  const handleCheckUpdate = async () => {
+    setIsCheckingUpdate(true);
+    setUpdateMsg(null);
+    try {
+      const info = await api.checkSystemUpdate();
+      setVersionInfo(info);
+      if (info.hasUpdate) {
+        setUpdateMsg({ type: 'success', text: `发现新版本 ${info.latestVersion}！` });
+      } else {
+        setUpdateMsg({ type: 'success', text: `当前已是最新版本 (${info.currentVersion})` });
+      }
+    } catch (err: any) {
+      setUpdateMsg({ type: 'error', text: `检查更新失败: ${err.message}` });
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
+
+  const handleApplyUpdate = async () => {
+    if (!window.confirm('确定要从 GitHub 拉取最新代码吗？更新后建议重启控制面板。')) return;
+    setIsApplyingUpdate(true);
+    try {
+      const res = await api.applySystemUpdate();
+      alert(res.message);
+    } catch (err: any) {
+      alert(`更新失败: ${err.message}`);
+    } finally {
+      setIsApplyingUpdate(false);
+    }
+  };
+
+  const getThemeIcon = (name: string) => {
+    switch (name) {
+      case 'Moon': return <Moon className="w-5 h-5 text-blue-400" />;
+      case 'Feather': return <Feather className="w-5 h-5 text-teal-400" />;
+      case 'Sparkles': return <Sparkles className="w-5 h-5 text-purple-400" />;
+      case 'Sun': return <Sun className="w-5 h-5 text-amber-500" />;
+      case 'Heart': return <Heart className="w-5 h-5 text-pink-400" />;
+      default: return <Palette className="w-5 h-5 text-blue-400" />;
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-white flex items-center space-x-2.5">
-          <span>系统设置与存储配置</span>
+          <span>系统设置与个性化配置</span>
         </h2>
         <p className="text-xs text-slate-400 mt-1">
-          管理 NAS 挂载路径、WebDAV 网络共享服务与面板管理员安全设置
+          管理主题风格、管理员账户安全、NAS 挂载路径、WebDAV 服务与在线版本更新
         </p>
       </div>
 
-      {/* Storage Mounts Configuration */}
+      {/* 1. Theme Customization Gallery */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+        <div className="flex items-center space-x-2.5">
+          <div className="p-2 bg-gradient-to-tr from-purple-500/20 to-pink-500/20 text-purple-400 rounded-xl">
+            <Palette className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-bold text-sm text-white">主题风格定制 (5 大视觉体系)</h3>
+            <p className="text-xs text-slate-400">一键切换并实时生效，支持水墨国风、二次元、极简浅色与樱花粉</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-2">
+          {THEME_PRESETS.map((preset) => {
+            const isSelected = currentTheme === preset.id;
+            return (
+              <div
+                key={preset.id}
+                onClick={() => themeService.setTheme(preset.id)}
+                className={`p-4 rounded-2xl border cursor-pointer transition-all duration-200 relative overflow-hidden flex flex-col justify-between ${
+                  isSelected
+                    ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/15 ring-2 ring-blue-500/30'
+                    : 'border-slate-800 bg-slate-950/60 hover:border-slate-700 hover:bg-slate-900/60'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
+                      {getThemeIcon(preset.iconName)}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-white text-sm flex items-center space-x-1.5">
+                        <span>{preset.name}</span>
+                      </div>
+                      <div className="text-[11px] font-mono text-slate-400">{preset.subname}</div>
+                    </div>
+                  </div>
+                  {isSelected && (
+                    <span className="p-1 rounded-full bg-blue-500 text-white">
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-slate-400 mt-3 line-clamp-2">
+                  {preset.description}
+                </p>
+
+                <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-800/60 text-[11px]">
+                  <span className="text-slate-500">主色调</span>
+                  <div className="flex items-center space-x-1.5 font-mono text-slate-300">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: preset.primaryColor }}></span>
+                    <span>{preset.primaryColor}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. Admin Account Settings (Username & Password) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Change Username */}
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl">
+              <User className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-white">修改管理员账号用户名</h3>
+              <p className="text-xs text-slate-400">当前用户名: <strong className="text-blue-400 font-mono">{currentUsername}</strong></p>
+            </div>
+          </div>
+
+          {usernameMsg && (
+            <div className={`p-3 rounded-xl border text-xs flex items-center space-x-2 ${
+              usernameMsg.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+            }`}>
+              {usernameMsg.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+              <span>{usernameMsg.text}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleChangeUsername} className="space-y-3 text-xs">
+            <div>
+              <label className="block text-slate-400 mb-1">新用户名</label>
+              <input
+                type="text"
+                required
+                minLength={2}
+                placeholder="例如: admin / my_nas"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-blue-500 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">验证当前密码</label>
+              <input
+                type="password"
+                required
+                placeholder="请输入当前密码以确认身份"
+                value={usernamePassword}
+                onChange={(e) => setUsernamePassword(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isChangingUser}
+              className="flex items-center space-x-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition-colors shadow-md shadow-blue-500/20 disabled:opacity-50"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>{isChangingUser ? '修改中...' : '保存新用户名'}</span>
+            </button>
+          </form>
+        </div>
+
+        {/* Change Password */}
+        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl">
+              <Key className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-white">修改管理员登录密码</h3>
+              <p className="text-xs text-slate-400">保障面板与 NAS 文件的管理安全</p>
+            </div>
+          </div>
+
+          {passwordMsg && (
+            <div className={`p-3 rounded-xl border text-xs flex items-center space-x-2 ${
+              passwordMsg.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+            }`}>
+              {passwordMsg.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+              <span>{passwordMsg.text}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleChangePassword} className="space-y-3 text-xs">
+            <div>
+              <label className="block text-slate-400 mb-1">当前旧密码</label>
+              <input
+                type="password"
+                required
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">新密码 (至少6位)</label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-slate-400 mb-1">确认新密码</label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isChangingPass}
+              className="flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-colors shadow-md shadow-emerald-500/20 disabled:opacity-50"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>{isChangingPass ? '修改中...' : '确认更新密码'}</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* 3. System Version & GitHub Online Update */}
+      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <div className="p-2 bg-amber-500/10 text-amber-400 rounded-xl">
+              <GitBranch className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-white">系统版本与 GitHub 在线更新</h3>
+              <p className="text-xs text-slate-400">
+                当前运行版本: <span className="text-amber-400 font-mono font-bold">{versionInfo?.currentVersion || 'v1.2.0'}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={handleCheckUpdate}
+              disabled={isCheckingUpdate}
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isCheckingUpdate ? 'animate-spin' : ''}`} />
+              <span>{isCheckingUpdate ? '正在检查...' : '检查新版本'}</span>
+            </button>
+            <a
+              href="https://github.com/Canyat/CanyatNAS"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center space-x-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-xs rounded-xl transition"
+            >
+              <span>GitHub 源码</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+
+        {updateMsg && (
+          <div className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+            updateMsg.type === 'success' ? 'bg-blue-500/10 border-blue-500/20 text-blue-300' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+          }`}>
+            <div className="flex items-center space-x-2">
+              <Check className="w-4 h-4 text-emerald-400" />
+              <span>{updateMsg.text}</span>
+            </div>
+            {versionInfo?.hasUpdate && (
+              <button
+                onClick={handleApplyUpdate}
+                disabled={isApplyingUpdate}
+                className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold"
+              >
+                {isApplyingUpdate ? '更新中...' : '一键更新'}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 4. Storage Mounts Configuration */}
       <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
         <div className="flex items-center space-x-2.5">
           <div className="p-2 bg-purple-500/10 text-purple-400 rounded-xl">
@@ -144,7 +501,7 @@ export const SettingsView: React.FC = () => {
           </div>
           <div>
             <h3 className="font-bold text-sm text-white">NAS 存储挂载点管理</h3>
-            <p className="text-xs text-slate-400">配置 NAS 文件管理器允许访问的主机目录或外接硬盘挂载路径</p>
+            <p className="text-xs text-slate-400">配置 NAS 文件管理器允许访问的主机目录或外接硬盘挂载路径（支持 Windows 盘符如 C:\、D:\ 与 Linux /media 等）</p>
           </div>
         </div>
 
@@ -156,7 +513,7 @@ export const SettingsView: React.FC = () => {
                 <div className="font-semibold text-white flex items-center space-x-2">
                   <span>{root.name}</span>
                   {root.isSystem && (
-                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">系统内置</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 font-mono">系统默认</span>
                   )}
                 </div>
                 <div className="font-mono text-slate-400">{root.path}</div>
@@ -179,14 +536,14 @@ export const SettingsView: React.FC = () => {
         <form onSubmit={handleAddRoot} className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
           <input
             type="text"
-            placeholder="自定义名称 (如: 机械硬盘1)"
+            placeholder="自定义名称 (如: 机械硬盘1 / 电影库)"
             value={newRootName}
             onChange={(e) => setNewRootName(e.target.value)}
             className="px-3.5 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-purple-500"
           />
           <input
             type="text"
-            placeholder="Ubuntu 绝对路径 (如: /mnt/hdd1)"
+            placeholder="系统绝对路径 (如: D:\ 或 /mnt/hdd1)"
             value={newRootPath}
             onChange={(e) => setNewRootPath(e.target.value)}
             className="px-3.5 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-purple-500 font-mono"
@@ -202,7 +559,7 @@ export const SettingsView: React.FC = () => {
         </form>
       </div>
 
-      {/* WebDAV Settings */}
+      {/* 5. WebDAV Settings */}
       <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
         <div className="flex items-center space-x-2.5">
           <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl">
@@ -246,8 +603,8 @@ export const SettingsView: React.FC = () => {
           <div className="p-4 bg-slate-950/40 rounded-xl border border-slate-800/40 text-xs space-y-2">
             <span className="font-semibold text-blue-400 block">连接指引:</span>
             <ul className="space-y-1 text-slate-400 list-disc list-inside leading-relaxed">
-              <li><strong className="text-slate-200">Windows:</strong> 此电脑 ➔ 映射网络驱动器 ➔ 输入 <code className="text-purple-300 font-mono">http://&lt;Ubuntu-IP&gt;:{webdavPort}/</code></li>
-              <li><strong className="text-slate-200">macOS:</strong> Finder ➔ 前往 ➔ 连接服务器 ➔ 输入 <code className="text-purple-300 font-mono">http://&lt;Ubuntu-IP&gt;:{webdavPort}/</code></li>
+              <li><strong className="text-slate-200">Windows:</strong> 此电脑 ➔ 映射网络驱动器 ➔ 输入 <code className="text-purple-300 font-mono">http://&lt;IP地址&gt;:{webdavPort}/</code></li>
+              <li><strong className="text-slate-200">macOS:</strong> Finder ➔ 前往 ➔ 连接服务器 ➔ 输入 <code className="text-purple-300 font-mono">http://&lt;IP地址&gt;:{webdavPort}/</code></li>
             </ul>
           </div>
 
@@ -258,74 +615,6 @@ export const SettingsView: React.FC = () => {
           >
             <Save className="w-3.5 h-3.5" />
             <span>保存 WebDAV 配置</span>
-          </button>
-        </form>
-      </div>
-
-      {/* Change Password */}
-      <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-lg space-y-4">
-        <div className="flex items-center space-x-2.5">
-          <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl">
-            <Key className="w-4 h-4" />
-          </div>
-          <div>
-            <h3 className="font-bold text-sm text-white">修改管理员登录密码</h3>
-            <p className="text-xs text-slate-400">保障 Ubuntu 面板与 NAS 文件的管理权限安全</p>
-          </div>
-        </div>
-
-        {passwordMsg && (
-          <div className={`p-3 rounded-xl border text-xs flex items-center space-x-2 ${
-            passwordMsg.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-          }`}>
-            {passwordMsg.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-            <span>{passwordMsg.text}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleChangePassword} className="space-y-3 max-w-md text-xs">
-          <div>
-            <label className="block text-slate-400 mb-1">当前旧密码</label>
-            <input
-              type="password"
-              required
-              value={oldPassword}
-              onChange={(e) => setOldPassword(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-slate-400 mb-1">新密码 (至少6位)</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-slate-400 mb-1">确认新密码</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-200 focus:outline-none focus:border-emerald-500"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isChangingPass}
-            className="flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl transition-colors shadow-md shadow-emerald-500/20 disabled:opacity-50"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>{isChangingPass ? '修改中...' : '确认更新密码'}</span>
           </button>
         </form>
       </div>

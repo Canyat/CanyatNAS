@@ -28,6 +28,34 @@ export class SystemController {
       res.status(500).json({ error: err.message });
     }
   }
+
+  public async getVersion(req: Request, res: Response): Promise<void> {
+    try {
+      const version = systemService.getVersion();
+      res.json({ version });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  public async checkUpdate(req: Request, res: Response): Promise<void> {
+    try {
+      const updateInfo = await systemService.checkGitHubUpdate();
+      res.json(updateInfo);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  public async applyUpdate(req: Request, res: Response): Promise<void> {
+    try {
+      const result = await systemService.applyUpdate();
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
 }
 
 export const systemController = new SystemController();
+

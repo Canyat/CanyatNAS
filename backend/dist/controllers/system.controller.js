@@ -30,6 +30,33 @@ class SystemController {
             res.status(500).json({ error: err.message });
         }
     }
+    async getVersion(req, res) {
+        try {
+            const version = system_service_1.systemService.getVersion();
+            res.json({ version });
+        }
+        catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    }
+    async checkUpdate(req, res) {
+        try {
+            const updateInfo = await system_service_1.systemService.checkGitHubUpdate();
+            res.json(updateInfo);
+        }
+        catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    }
+    async applyUpdate(req, res) {
+        try {
+            const result = await system_service_1.systemService.applyUpdate();
+            res.json(result);
+        }
+        catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    }
 }
 exports.SystemController = SystemController;
 exports.systemController = new SystemController();

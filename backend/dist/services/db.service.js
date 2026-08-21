@@ -57,6 +57,22 @@ class DbService {
           value TEXT NOT NULL
         )
       `);
+            // Processes table for custom apps/services
+            this.db.run(`
+        CREATE TABLE IF NOT EXISTS processes (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          command TEXT NOT NULL,
+          args TEXT,
+          cwd TEXT,
+          env TEXT,
+          auto_start INTEGER DEFAULT 0,
+          auto_restart INTEGER DEFAULT 0,
+          status TEXT DEFAULT 'stopped',
+          icon TEXT,
+          created_at INTEGER NOT NULL
+        )
+      `);
             // Storage roots table
             this.db.run(`
         CREATE TABLE IF NOT EXISTS storage_roots (
@@ -66,20 +82,48 @@ class DbService {
           is_system INTEGER NOT NULL
         )
       `);
-            // Insert default storage roots if empty
+            // Insert default storage roots if empty (Auto adapt Windows drives or Linux roots)
             this.db.get('SELECT COUNT(*) as count FROM storage_roots', (err, row) => {
                 if (!err && row && row.count === 0) {
-                    const defaultRoots = [
-                        { id: 'root_home', name: 'Home / 用户目录', path: process.env.HOME || '/home', is_system: 1 },
-                        { id: 'root_media', name: 'Media / 媒体存储', path: '/media', is_system: 1 },
-                        { id: 'root_mnt', name: 'Mnt / 挂载磁盘', path: '/mnt', is_system: 1 },
-                        { id: 'root_nas', name: 'NAS Data / 默认数据', path: path_1.default.resolve(process.cwd(), 'data', 'storage'), is_system: 0 }
-                    ];
-                    // Ensure nas data default directory exists
+                    const defaultRoots = [];
+                    if (process.platform === 'win32') {
+                        // Auto detect Windows drive letters C:, D:, E:, F:, G:, H:, etc.
+                        const letters = ['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'Z'];
+                        for (const l of letters) {
+                            const drivePath = `${l}:\\`;
+                            try {
+                                if (fs_1.default.existsSync(drivePath)) {
+                                    defaultRoots.push({
+                                        id: `root_${l.toLowerCase()}`,
+                                        name: l === 'C' ? `系统盘 (${l}:)` : `本地磁盘 (${l}:)`,
+                                        path: drivePath,
+                                        is_system: l === 'C' ? 1 : 0
+                                    });
+                                }
+                            }
+                            catch {
+                                // Ignore inaccessible drives
+                            }
+                        }
+                    }
+                    else {
+                        // Linux storage roots
+                        defaultRoots.push({ id: 'root_home', name: 'Home / 用户目录', path: process.env.HOME || '/home', is_system: 1 }, { id: 'root_media', name: 'Media / 媒体存储', path: '/media', is_system: 1 }, { id: 'root_mnt', name: 'Mnt / 挂载磁盘', path: '/mnt', is_system: 1 });
+                    }
+                    // Default NAS storage folder
                     const defaultNasPath = path_1.default.resolve(process.cwd(), 'data', 'storage');
                     if (!fs_1.default.existsSync(defaultNasPath)) {
-                        fs_1.default.mkdirSync(defaultNasPath, { recursive: true });
+                        try {
+                            fs_1.default.mkdirSync(defaultNasPath, { recursive: true });
+                        }
+                        catch { }
                     }
+                    defaultRoots.push({
+                        id: 'root_nas',
+                        name: 'NAS Data / 默认数据目录',
+                        path: defaultNasPath,
+                        is_system: 0
+                    });
                     const stmt = this.db.prepare('INSERT OR IGNORE INTO storage_roots (id, name, path, is_system) VALUES (?, ?, ?, ?)');
                     for (const root of defaultRoots) {
                         stmt.run(root.id, root.name, root.path, root.is_system);
@@ -116,6 +160,16 @@ class DbService {
     setUserPassword(username, newPasswordHash) {
         return new Promise((resolve, reject) => {
             this.db.run('UPDATE users SET password_hash = ? WHERE username = ?', [newPasswordHash, username], function (err) {
+                if (err)
+                    reject(err);
+                else
+                    resolve(this.changes > 0);
+            });
+        });
+    }
+    setUsername(oldUsername, newUsername) {
+        return new Promise((resolve, reject) => {
+            this.db.run('UPDATE users SET username = ? WHERE username = ?', [newUsername, oldUsername], function (err) {
                 if (err)
                     reject(err);
                 else
@@ -294,6 +348,140 @@ class DbService {
                     this.cachedSettings.set(key, value);
                     resolve();
                 }
+            });
+        });
+    }
+    // Custom Processes Management
+    listProcesses() {
+        return new Promise((resolve, reject) => {
+            this.db.all('SELECT * FROM processes ORDER BY created_at DESC', (err, rows) => {
+                if (err)
+                    reject(err);
+                else {
+                    resolve(rows.map(r => ({
+                        id: r.id,
+                        name: r.name,
+                        command: r.command,
+                        args: r.args || '',
+                        cwd: r.cwd || '',
+                        env: r.env ? JSON.parse(r.env) : {},
+                        autoStart: Boolean(r.auto_start),
+                        autoRestart: Boolean(r.auto_restart),
+                        status: r.status || 'stopped',
+                        icon: r.icon || '',
+                        createdAt: r.created_at
+                    })));
+                }
+            });
+        });
+    }
+    getProcess(id) {
+        return new Promise((resolve, reject) => {
+            this.db.get('SELECT * FROM processes WHERE id = ?', [id], (err, r) => {
+                if (err)
+                    reject(err);
+                else if (!r)
+                    resolve(null);
+                else {
+                    resolve({
+                        id: r.id,
+                        name: r.name,
+                        command: r.command,
+                        args: r.args || '',
+                        cwd: r.cwd || '',
+                        env: r.env ? JSON.parse(r.env) : {},
+                        autoStart: Boolean(r.auto_start),
+                        autoRestart: Boolean(r.auto_restart),
+                        status: r.status || 'stopped',
+                        icon: r.icon || '',
+                        createdAt: r.created_at
+                    });
+                }
+            });
+        });
+    }
+    createProcess(proc) {
+        return new Promise((resolve, reject) => {
+            const envStr = proc.env ? JSON.stringify(proc.env) : '';
+            this.db.run(`INSERT INTO processes (id, name, command, args, cwd, env, auto_start, auto_restart, status, icon, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+                proc.id,
+                proc.name,
+                proc.command,
+                proc.args || '',
+                proc.cwd || '',
+                envStr,
+                proc.autoStart ? 1 : 0,
+                proc.autoRestart ? 1 : 0,
+                proc.status || 'stopped',
+                proc.icon || '',
+                proc.createdAt || Date.now()
+            ], (err) => {
+                if (err)
+                    reject(err);
+                else
+                    resolve(proc);
+            });
+        });
+    }
+    updateProcess(id, updates) {
+        return new Promise((resolve, reject) => {
+            const fields = [];
+            const values = [];
+            if (updates.name !== undefined) {
+                fields.push('name = ?');
+                values.push(updates.name);
+            }
+            if (updates.command !== undefined) {
+                fields.push('command = ?');
+                values.push(updates.command);
+            }
+            if (updates.args !== undefined) {
+                fields.push('args = ?');
+                values.push(updates.args);
+            }
+            if (updates.cwd !== undefined) {
+                fields.push('cwd = ?');
+                values.push(updates.cwd);
+            }
+            if (updates.env !== undefined) {
+                fields.push('env = ?');
+                values.push(JSON.stringify(updates.env));
+            }
+            if (updates.autoStart !== undefined) {
+                fields.push('auto_start = ?');
+                values.push(updates.autoStart ? 1 : 0);
+            }
+            if (updates.autoRestart !== undefined) {
+                fields.push('auto_restart = ?');
+                values.push(updates.autoRestart ? 1 : 0);
+            }
+            if (updates.status !== undefined) {
+                fields.push('status = ?');
+                values.push(updates.status);
+            }
+            if (updates.icon !== undefined) {
+                fields.push('icon = ?');
+                values.push(updates.icon);
+            }
+            if (fields.length === 0)
+                return resolve(true);
+            values.push(id);
+            this.db.run(`UPDATE processes SET ${fields.join(', ')} WHERE id = ?`, values, function (err) {
+                if (err)
+                    reject(err);
+                else
+                    resolve(this.changes > 0);
+            });
+        });
+    }
+    deleteProcess(id) {
+        return new Promise((resolve, reject) => {
+            this.db.run('DELETE FROM processes WHERE id = ?', [id], function (err) {
+                if (err)
+                    reject(err);
+                else
+                    resolve(this.changes > 0);
             });
         });
     }

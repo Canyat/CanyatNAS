@@ -27,6 +27,8 @@ export interface SystemMetrics {
     usagePercent: number;
     readSpeed: number;
     writeSpeed: number;
+    isSystem: boolean;
+    driveType: 'system' | 'data' | 'external';
   }>;
   network: {
     interfaces: Array<{
@@ -50,6 +52,35 @@ export interface SystemMetrics {
     processCount: number;
   };
 }
+
+export interface ProcessInfo {
+  id: string;
+  name: string;
+  command: string;
+  args?: string;
+  cwd?: string;
+  env?: Record<string, string>;
+  autoStart: boolean;
+  autoRestart: boolean;
+  status: 'running' | 'stopped' | 'errored';
+  pid?: number;
+  uptime?: number;
+  createdAt: number;
+  icon?: string;
+  lastExitCode?: number | null;
+}
+
+export interface SystemVersionInfo {
+  currentVersion: string;
+  latestVersion: string;
+  hasUpdate: boolean;
+  releaseNotes?: string;
+  releaseUrl?: string;
+  publishedAt?: string;
+}
+
+export type ThemeMode = 'dark' | 'ink' | 'anime' | 'light' | 'pink';
+
 
 export interface ContainerInfo {
   id: string;

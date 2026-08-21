@@ -16,18 +16,37 @@ export class DockerService {
     this.initDocker();
   }
 
-  private initDocker(): void {
+  private getDockerOptions(): Docker.DockerOptions | null {
+    if (process.env.DOCKER_HOST) {
+      const url = new URL(process.env.DOCKER_HOST);
+      return { host: url.hostname, port: parseInt(url.port || '2375', 10), timeout: 3000 };
+    }
+
+    if (process.platform === 'win32') {
+      const winPipe = process.env.DOCKER_SOCKET || '//./pipe/docker_engine';
+      return { socketPath: winPipe, timeout: 3000 };
+    }
+
     const socketPath = process.env.DOCKER_SOCKET || '/var/run/docker.sock';
     if (fs.existsSync(socketPath)) {
+      return { socketPath, timeout: 3000 };
+    }
+
+    return null;
+  }
+
+  private initDocker(): void {
+    const opts = this.getDockerOptions();
+    if (opts) {
       try {
-        this.docker = new Docker({ socketPath, timeout: 3000 });
+        this.docker = new Docker(opts);
         this.docker.ping()
           .then(() => {
             this.isDockerAvailable = true;
-            console.log('[CanyatNAS] Docker daemon connected successfully via ' + socketPath);
+            console.log('[CanyatNAS] Docker daemon connected successfully.');
           })
           .catch((err) => {
-            console.warn('[CanyatNAS] Docker socket found but ping failed:', err.message);
+            console.warn('[CanyatNAS] Docker connection attempt failed:', err.message);
             this.isDockerAvailable = false;
           });
       } catch (err: any) {
@@ -35,7 +54,7 @@ export class DockerService {
         this.isDockerAvailable = false;
       }
     } else {
-      console.log('[CanyatNAS] Docker socket not found at ' + socketPath + '. Running in demo/mock mode.');
+      console.log('[CanyatNAS] Docker socket not found. Running in demo/mock mode.');
       this.isDockerAvailable = false;
     }
   }
@@ -47,11 +66,11 @@ export class DockerService {
     }
     this.lastPingCheck = now;
 
-    const socketPath = process.env.DOCKER_SOCKET || '/var/run/docker.sock';
-    if (fs.existsSync(socketPath)) {
+    const opts = this.getDockerOptions();
+    if (opts) {
       try {
         if (!this.docker) {
-          this.docker = new Docker({ socketPath, timeout: 3000 });
+          this.docker = new Docker(opts);
         }
         await Promise.race([
           this.docker.ping(),

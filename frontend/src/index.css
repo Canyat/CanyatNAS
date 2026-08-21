@@ -9,14 +9,47 @@
     --card: #0f172a;
     --card-foreground: #e2e8f0;
     --border: #1e293b;
+    --accent: #3b82f6;
   }
 
-  .light {
+  /* Light Theme */
+  .theme-light, .light {
     --background: #f8fafc;
     --foreground: #0f172a;
     --card: #ffffff;
     --card-foreground: #1e293b;
     --border: #e2e8f0;
+    --accent: #2563eb;
+  }
+
+  /* Ink Wash Theme */
+  .theme-ink {
+    --background: #111715;
+    --foreground: #eef2f0;
+    --card: #16201d;
+    --card-foreground: #e2e8e5;
+    --border: #233530;
+    --accent: #2dd4bf;
+  }
+
+  /* Anime ACG Theme */
+  .theme-anime {
+    --background: #0d0a1a;
+    --foreground: #f5f3ff;
+    --card: #16122c;
+    --card-foreground: #ede9fe;
+    --border: #2e2456;
+    --accent: #a855f7;
+  }
+
+  /* Sakura Pink Theme */
+  .theme-pink {
+    --background: #1c0f16;
+    --foreground: #fff1f2;
+    --card: #281520;
+    --card-foreground: #ffe4e6;
+    --border: #4c2237;
+    --accent: #ec4899;
   }
 }
 
@@ -32,42 +65,167 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.4);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.3);
+  background: rgba(148, 163, 184, 0.3);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.6);
+  background: rgba(148, 163, 184, 0.6);
+}
+
+/* Dynamic Wallpaper Backgrounds for Themes */
+.theme-bg-container {
+  position: relative;
+  min-height: 100vh;
+}
+
+.theme-bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.theme-dark .theme-bg-layer {
+  background: #090d16;
+  opacity: 1;
+}
+
+.theme-light .theme-bg-layer {
+  background: #f8fafc;
+  opacity: 1;
+}
+
+.theme-ink .theme-bg-layer {
+  background-image: url('/themes/ink_wash.jpg');
+  opacity: 0.85;
+}
+
+.theme-anime .theme-bg-layer {
+  background-image: url('/themes/anime_cyber.jpg');
+  opacity: 0.85;
+}
+
+.theme-pink .theme-bg-layer {
+  background-image: url('/themes/sakura_pink.jpg');
+  opacity: 0.85;
+}
+
+/* Backdrop Dimming Masks */
+.theme-backdrop-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition: background-color 0.3s ease;
+}
+
+.theme-dark .theme-backdrop-mask {
+  background: rgba(9, 13, 22, 0.85);
+}
+
+.theme-light .theme-backdrop-mask {
+  background: rgba(248, 250, 252, 0.92);
+}
+
+.theme-ink .theme-backdrop-mask {
+  background: rgba(12, 18, 16, 0.76);
+  backdrop-filter: blur(8px);
+}
+
+.theme-anime .theme-backdrop-mask {
+  background: rgba(12, 8, 26, 0.74);
+  backdrop-filter: blur(8px);
+}
+
+.theme-pink .theme-backdrop-mask {
+  background: rgba(26, 12, 20, 0.74);
+  backdrop-filter: blur(8px);
 }
 
 /* Glassmorphic panel effect */
 .glass-panel {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.theme-ink .glass-panel {
+  background: rgba(18, 27, 24, 0.82);
+  border-color: rgba(45, 212, 191, 0.15);
+}
+
+.theme-anime .glass-panel {
+  background: rgba(20, 16, 40, 0.82);
+  border-color: rgba(168, 85, 247, 0.2);
+}
+
+.theme-pink .glass-panel {
+  background: rgba(38, 18, 28, 0.82);
+  border-color: rgba(236, 72, 153, 0.2);
+}
+
+.theme-light .glass-panel {
+  background: rgba(255, 255, 255, 0.9);
+  color: #0f172a;
+  border-color: rgba(226, 232, 240, 0.9);
+}
+
 .glass-card {
-  background: rgba(30, 41, 59, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(30, 41, 59, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.theme-ink .glass-card {
+  background: rgba(23, 35, 31, 0.7);
+  border-color: rgba(45, 212, 191, 0.12);
+}
+
+.theme-anime .glass-card {
+  background: rgba(27, 21, 54, 0.7);
+  border-color: rgba(168, 85, 247, 0.15);
+}
+
+.theme-pink .glass-card {
+  background: rgba(46, 22, 35, 0.7);
+  border-color: rgba(236, 72, 153, 0.15);
+}
+
+.theme-light .glass-card {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
 .glass-card:hover {
-  border-color: rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.35);
 }
 
-/* Glowing text and accent effects */
-.glow-text-blue {
-  text-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+.theme-ink .glass-card:hover {
+  border-color: rgba(45, 212, 191, 0.4);
 }
 
-.glow-text-green {
-  text-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+.theme-anime .glass-card:hover {
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.theme-pink .glass-card:hover {
+  border-color: rgba(236, 72, 153, 0.4);
+}
+
+.theme-light .glass-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
 }

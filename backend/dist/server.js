@@ -16,6 +16,7 @@ const docker_controller_1 = require("./controllers/docker.controller");
 const files_controller_1 = require("./controllers/files.controller");
 const share_controller_1 = require("./controllers/share.controller");
 const settings_controller_1 = require("./controllers/settings.controller");
+const process_controller_1 = require("./controllers/process.controller");
 const websocket_1 = require("./websocket");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
@@ -39,10 +40,22 @@ api.use(auth_middleware_1.authMiddleware);
 // Auth
 api.get('/auth/me', (req, res) => auth_controller_1.authController.getMe(req, res));
 api.post('/auth/change-password', (req, res) => auth_controller_1.authController.changePassword(req, res));
-// System & Hardware Metrics
+api.post('/auth/change-username', (req, res) => auth_controller_1.authController.changeUsername(req, res));
+// System & Hardware Metrics & Auto-Update
 api.get('/system/metrics', (req, res) => system_controller_1.systemController.getMetrics(req, res));
+api.get('/system/version', (req, res) => system_controller_1.systemController.getVersion(req, res));
+api.post('/system/check-update', (req, res) => system_controller_1.systemController.checkUpdate(req, res));
+api.post('/system/apply-update', (req, res) => system_controller_1.systemController.applyUpdate(req, res));
 api.post('/system/reboot', (req, res) => system_controller_1.systemController.reboot(req, res));
 api.post('/system/shutdown', (req, res) => system_controller_1.systemController.shutdown(req, res));
+// Custom Process & App Manager (.exe, .bat, .sh, Python)
+api.get('/processes', (req, res) => process_controller_1.processController.list(req, res));
+api.post('/processes', (req, res) => process_controller_1.processController.create(req, res));
+api.post('/processes/:id/start', (req, res) => process_controller_1.processController.start(req, res));
+api.post('/processes/:id/stop', (req, res) => process_controller_1.processController.stop(req, res));
+api.post('/processes/:id/restart', (req, res) => process_controller_1.processController.restart(req, res));
+api.delete('/processes/:id', (req, res) => process_controller_1.processController.delete(req, res));
+api.get('/processes/:id/logs', (req, res) => process_controller_1.processController.getLogs(req, res));
 // Docker Manager
 api.get('/docker/status', (req, res) => docker_controller_1.dockerController.getStatus(req, res));
 api.get('/docker/containers', (req, res) => docker_controller_1.dockerController.listContainers(req, res));

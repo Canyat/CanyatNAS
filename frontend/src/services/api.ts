@@ -75,9 +75,39 @@ export class ApiService {
     });
   }
 
+  public async changeUsername(newUsername: string, password?: string): Promise<{ success: boolean; token: string; user: { username: string } }> {
+    const res = await this.request<{ success: boolean; token: string; user: { username: string } }>('/auth/change-username', {
+      method: 'POST',
+      body: JSON.stringify({ newUsername, password })
+    });
+    if (res.token) {
+      this.setToken(res.token);
+    }
+    return res;
+  }
+
   // System
   public async getMetrics(): Promise<SystemMetrics> {
     return this.request<SystemMetrics>('/system/metrics');
+  }
+
+  public async getSystemVersion(): Promise<{ version: string }> {
+    return this.request<{ version: string }>('/system/version');
+  }
+
+  public async checkSystemUpdate(): Promise<{
+    currentVersion: string;
+    latestVersion: string;
+    hasUpdate: boolean;
+    releaseNotes: string;
+    releaseUrl: string;
+    publishedAt: string;
+  }> {
+    return this.request('/system/check-update', { method: 'POST' });
+  }
+
+  public async applySystemUpdate(): Promise<{ success: boolean; message: string }> {
+    return this.request('/system/apply-update', { method: 'POST' });
   }
 
   public async reboot(): Promise<{ success: boolean; message: string }> {
@@ -351,6 +381,48 @@ export class ApiService {
       body: JSON.stringify(data)
     });
   }
+
+  // Custom Processes (.exe, .bat, .sh, Python)
+  public async listProcesses(): Promise<{ processes: any[] }> {
+    return this.request<{ processes: any[] }>('/processes');
+  }
+
+  public async createProcess(data: {
+    name: string;
+    command: string;
+    args?: string;
+    cwd?: string;
+    env?: Record<string, string>;
+    autoStart?: boolean;
+    autoRestart?: boolean;
+    icon?: string;
+  }): Promise<{ success: boolean; process: any }> {
+    return this.request('/processes', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  public async startProcess(id: string): Promise<{ success: boolean }> {
+    return this.request(`/processes/${id}/start`, { method: 'POST' });
+  }
+
+  public async stopProcess(id: string): Promise<{ success: boolean }> {
+    return this.request(`/processes/${id}/stop`, { method: 'POST' });
+  }
+
+  public async restartProcess(id: string): Promise<{ success: boolean }> {
+    return this.request(`/processes/${id}/restart`, { method: 'POST' });
+  }
+
+  public async deleteProcess(id: string): Promise<{ success: boolean }> {
+    return this.request(`/processes/${id}`, { method: 'DELETE' });
+  }
+
+  public async getProcessLogs(id: string): Promise<{ logs: string[] }> {
+    return this.request<{ logs: string[] }>(`/processes/${id}/logs`);
+  }
 }
 
 export const api = new ApiService();
+

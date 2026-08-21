@@ -20,7 +20,11 @@ import { MetricCard } from '../components/MetricCard';
 import { wsClient } from '../services/ws';
 import { api } from '../services/api';
 
-export const DashboardView: React.FC = () => {
+interface DashboardViewProps {
+  onNavigateTab?: (tab: string) => void;
+}
+
+export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigateTab }) => {
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [cpuHistory, setCpuHistory] = useState<number[]>([]);
   const [memHistory, setMemHistory] = useState<number[]>([]);
@@ -250,44 +254,126 @@ export const DashboardView: React.FC = () => {
           </div>
         </div>
 
-        {/* Disk Mount Points */}
+        {/* Disk Mount Points Grouped by System Disk vs Data Disk */}
         <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-5 shadow-lg space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold text-white flex items-center space-x-2">
               <HardDrive className="w-4 h-4 text-purple-400" />
-              <span>存储分区与挂载点</span>
+              <span>存储硬盘与分区（区分系统盘与挂载盘）</span>
             </h3>
-            <span className="text-xs text-slate-400">{metrics.disks.length} 个挂载分区</span>
+            <span className="text-xs text-slate-400 font-mono">
+              {metrics.disks.filter(d => d.isSystem || d.driveType === 'system').length} 系统盘 • {metrics.disks.filter(d => !d.isSystem && d.driveType !== 'system').length} 数据挂载盘
+            </span>
           </div>
 
-          <div className="space-y-3.5 max-h-56 overflow-y-auto pr-1">
-            {metrics.disks.map((disk, idx) => (
-              <div key={idx} className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/60 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-mono font-bold text-white px-2 py-0.5 rounded bg-slate-800">
-                      {disk.mount}
-                    </span>
-                    <span className="text-[11px] text-slate-400">{disk.filesystem}</span>
-                  </div>
-                  <div className="font-mono text-slate-300">
-                    <span className="text-slate-400">已用 </span>
-                    <span className="font-bold text-white">{formatBytes(disk.used)}</span>
-                    <span className="text-slate-500"> / {formatBytes(disk.total)}</span>
-                    <span className="ml-2 font-bold text-purple-400">({disk.usagePercent}%)</span>
-                  </div>
-                </div>
-
-                <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-300 ${
-                      disk.usagePercent > 85 ? 'bg-rose-500' : disk.usagePercent > 70 ? 'bg-amber-500' : 'bg-purple-500'
-                    }`}
-                    style={{ width: `${disk.usagePercent}%` }}
-                  />
-                </div>
+          <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
+            {/* 1. 系统主盘 (System OS Drives) */}
+            <div className="space-y-2">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-blue-400 flex items-center space-x-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-400 inline-block animate-pulse"></span>
+                <span>系统主盘 (System OS Disk)</span>
               </div>
-            ))}
+              {metrics.disks.filter(d => d.isSystem || d.driveType === 'system').map((disk, idx) => (
+                <div key={idx} className="p-3.5 bg-blue-950/20 rounded-xl border border-blue-500/30 space-y-2 hover:border-blue-500/50 transition">
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-2.5">
+                      <span className="font-mono font-bold text-white px-2 py-0.5 rounded bg-blue-600/30 text-blue-300 border border-blue-500/30">
+                        {disk.mount}
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-medium">系统盘 OS</span>
+                      <span className="text-[11px] text-slate-400">{disk.filesystem}</span>
+                    </div>
+                    <div className="flex items-center space-x-3 font-mono text-slate-300">
+                      <div>
+                        <span className="text-slate-400 text-[11px]">已用: </span>
+                        <span className="font-bold text-white">{formatBytes(disk.used)}</span>
+                        <span className="text-slate-500 text-[11px]"> / {formatBytes(disk.total)}</span>
+                        <span className="ml-1.5 font-bold text-blue-400">({disk.usagePercent}%)</span>
+                      </div>
+                      {onNavigateTab && (
+                        <button
+                          onClick={() => onNavigateTab('files')}
+                          className="px-2 py-0.5 rounded bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white text-[11px] font-sans transition"
+                        >
+                          打开目录
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="w-full bg-slate-950 rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-300 ${
+                        disk.usagePercent > 85 ? 'bg-rose-500' : disk.usagePercent > 70 ? 'bg-amber-500' : 'bg-blue-500'
+                      }`}
+                      style={{ width: `${disk.usagePercent}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono pt-1">
+                    <span>剩余可用: {formatBytes(disk.free)}</span>
+                    <span>I/O 吞吐: {formatSpeed(disk.readSpeed)} 读 • {formatSpeed(disk.writeSpeed)} 写</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* 2. 挂载数据盘 (Data & Mounted Storage Drives) */}
+            <div className="space-y-2 pt-1">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-purple-400 flex items-center space-x-1.5">
+                <span className="w-2 h-2 rounded-full bg-purple-400 inline-block"></span>
+                <span>数据盘与挂载存储 (Data & Mounted Disks)</span>
+              </div>
+              {metrics.disks.filter(d => !d.isSystem && d.driveType !== 'system').length === 0 ? (
+                <div className="p-3 bg-slate-950/40 rounded-xl border border-slate-800/60 text-center text-xs text-slate-500">
+                  暂无独立挂载数据盘，所有数据存储于系统主分区中
+                </div>
+              ) : (
+                metrics.disks.filter(d => !d.isSystem && d.driveType !== 'system').map((disk, idx) => (
+                  <div key={idx} className="p-3.5 bg-slate-950/60 rounded-xl border border-slate-800/80 space-y-2 hover:border-purple-500/40 transition">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center space-x-2.5">
+                        <span className="font-mono font-bold text-white px-2 py-0.5 rounded bg-purple-900/30 text-purple-300 border border-purple-700/30">
+                          {disk.mount}
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 font-medium">数据盘 Data</span>
+                        <span className="text-[11px] text-slate-400">{disk.filesystem}</span>
+                      </div>
+                      <div className="flex items-center space-x-3 font-mono text-slate-300">
+                        <div>
+                          <span className="text-slate-400 text-[11px]">已用: </span>
+                          <span className="font-bold text-white">{formatBytes(disk.used)}</span>
+                          <span className="text-slate-500 text-[11px]"> / {formatBytes(disk.total)}</span>
+                          <span className="ml-1.5 font-bold text-purple-400">({disk.usagePercent}%)</span>
+                        </div>
+                        {onNavigateTab && (
+                          <button
+                            onClick={() => onNavigateTab('files')}
+                            className="px-2 py-0.5 rounded bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white text-[11px] font-sans transition"
+                          >
+                            打开目录
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          disk.usagePercent > 85 ? 'bg-rose-500' : disk.usagePercent > 70 ? 'bg-amber-500' : 'bg-purple-500'
+                        }`}
+                        style={{ width: `${disk.usagePercent}%` }}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono pt-1">
+                      <span>剩余可用: {formatBytes(disk.free)}</span>
+                      <span>I/O 吞吐: {formatSpeed(disk.readSpeed)} 读 • {formatSpeed(disk.writeSpeed)} 写</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
