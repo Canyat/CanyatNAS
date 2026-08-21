@@ -547,18 +547,71 @@ class SystemService {
             };
         }
     }
-    // Pull Update from GitHub
-    applyUpdate() {
-        return new Promise((resolve) => {
-            (0, child_process_1.exec)('git pull origin main', { cwd: path_1.default.resolve(__dirname, '../../..') }, (err, stdout, stderr) => {
-                if (err) {
-                    resolve({ success: false, message: `Git pull 失败: ${err.message || stderr}` });
-                }
-                else {
-                    resolve({ success: true, message: `已成功拉取最新代码！${stdout}` });
-                }
+    // Pull & Apply Update from GitHub (Dual Mode: Git repo pull OR Release package auto-download & extract)
+    async applyUpdate() {
+        const rootDir = path_1.default.resolve(__dirname, '../../..');
+        const isGit = fs_1.default.existsSync(path_1.default.join(rootDir, '.git'));
+        if (isGit) {
+            return new Promise((resolve) => {
+                (0, child_process_1.exec)('git pull origin main', { cwd: rootDir }, (err, stdout, stderr) => {
+                    if (err) {
+                        resolve({ success: false, message: `Git 拉取失败: ${err.message || stderr}` });
+                    }
+                    else {
+                        resolve({ success: true, message: `已成功通过 Git 同步最新代码！\n${stdout}\n请重启面板使新版本生效。` });
+                    }
+                });
             });
-        });
+        }
+        // Non-Git release package update: Automatically download and unpack release asset from GitHub
+        try {
+            const isWin = process.platform === 'win32';
+            const downloadUrl = isWin
+                ? 'https://github.com/Canyat/CanyatNAS/releases/latest/download/canyat-nas.zip'
+                : 'https://github.com/Canyat/CanyatNAS/releases/latest/download/canyat-nas.tar.gz';
+            const tempFile = path_1.default.join(rootDir, isWin ? 'canyat-update.zip' : 'canyat-update.tar.gz');
+            // 1. Download release asset
+            await new Promise((resolve, reject) => {
+                const cmd = isWin
+                    ? `powershell -Command "Invoke-WebRequest -Uri '${downloadUrl}' -OutFile '${tempFile}'"`
+                    : `curl -sL '${downloadUrl}' -o '${tempFile}'`;
+                (0, child_process_1.exec)(cmd, { cwd: rootDir, timeout: 120000 }, (err) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve();
+                });
+            });
+            if (!fs_1.default.existsSync(tempFile) || fs_1.default.statSync(tempFile).size < 1024) {
+                throw new Error('下载的升级包损坏或网络超时。请直接前往 GitHub Releases 下载并覆盖文件。');
+            }
+            // 2. Extract and overwrite
+            await new Promise((resolve, reject) => {
+                const extractCmd = isWin
+                    ? `powershell -Command "Expand-Archive -Path '${tempFile}' -DestinationPath '${rootDir}' -Force"`
+                    : `tar -xzf '${tempFile}' -C '${rootDir}'`;
+                (0, child_process_1.exec)(extractCmd, { cwd: rootDir, timeout: 60000 }, (err) => {
+                    try {
+                        fs_1.default.unlinkSync(tempFile);
+                    }
+                    catch { }
+                    if (err)
+                        reject(err);
+                    else
+                        resolve();
+                });
+            });
+            return {
+                success: true,
+                message: '已成功下载并自动覆盖升级为最新发行版！请重启服务或刷新网页即可生效。'
+            };
+        }
+        catch (error) {
+            return {
+                success: false,
+                message: `自动更新失败（发行包环境）：${error.message || '请直接在 GitHub Releases 页面下载最新安装包覆盖'}`
+            };
+        }
     }
 }
 exports.SystemService = SystemService;
