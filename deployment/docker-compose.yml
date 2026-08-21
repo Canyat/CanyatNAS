@@ -1,0 +1,23 @@
+services:
+  canyat-nas:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    image: canyat-nas:latest
+    container_name: canyat-nas
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - PORT=5678
+      - INITIAL_ADMIN_PASSWORD=admin123
+      - TZ=Asia/Shanghai
+    volumes:
+      # Docker Socket to manage host containers
+      - /var/run/docker.sock:/var/run/docker.sock
+      # NAS Storage Directories (customize according to your host mounts)
+      - /media:/media
+      - /mnt:/mnt
+      - /home:/host_home:ro
+      # Panel internal database & settings
+      - ./data:/app/data

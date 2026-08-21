@@ -1,0 +1,302 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.dbService = exports.DbService = void 0;
+const sqlite3_1 = __importDefault(require("sqlite3"));
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
+class DbService {
+    db;
+    constructor(dbPath) {
+        const dataDir = path_1.default.resolve(process.env.DATA_DIR || path_1.default.join(process.cwd(), 'data'));
+        if (!fs_1.default.existsSync(dataDir)) {
+            fs_1.default.mkdirSync(dataDir, { recursive: true });
+        }
+        const defaultDbPath = path_1.default.join(dataDir, 'canyat-nas.db');
+        const finalDbPath = dbPath || defaultDbPath;
+        this.db = new sqlite3_1.default.Database(finalDbPath);
+        this.initTables();
+    }
+    initTables() {
+        this.db.serialize(() => {
+            // Users table
+            this.db.run(`
+        CREATE TABLE IF NOT EXISTS users (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          username TEXT UNIQUE NOT NULL,
+          password_hash TEXT NOT NULL,
+          created_at INTEGER NOT NULL
+        )
+      `);
+            // Share links table
+            this.db.run(`
+        CREATE TABLE IF NOT EXISTS shares (
+          id TEXT PRIMARY KEY,
+          file_name TEXT NOT NULL,
+          path TEXT NOT NULL,
+          relative_path TEXT NOT NULL,
+          is_dir INTEGER NOT NULL,
+          token TEXT UNIQUE NOT NULL,
+          has_password INTEGER NOT NULL,
+          password_hash TEXT,
+          expires_at INTEGER,
+          max_downloads INTEGER,
+          download_count INTEGER DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          note TEXT,
+          file_size INTEGER DEFAULT 0
+        )
+      `);
+            // Settings table
+            this.db.run(`
+        CREATE TABLE IF NOT EXISTS settings (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+      `);
+            // Storage roots table
+            this.db.run(`
+        CREATE TABLE IF NOT EXISTS storage_roots (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          path TEXT UNIQUE NOT NULL,
+          is_system INTEGER NOT NULL
+        )
+      `);
+            // Insert default storage roots if empty
+            this.db.get('SELECT COUNT(*) as count FROM storage_roots', (err, row) => {
+                if (!err && row && row.count === 0) {
+                    const defaultRoots = [
+                        { id: 'root_home', name: 'Home / 用户目录', path: process.env.HOME || '/home', is_system: 1 },
+                        { id: 'root_media', name: 'Media / 媒体存储', path: '/media', is_system: 1 },
+                        { id: 'root_mnt', name: 'Mnt / 挂载磁盘', path: '/mnt', is_system: 1 },
+                        { id: 'root_nas', name: 'NAS Data / 默认数据', path: path_1.default.resolve(process.cwd(), 'data', 'storage'), is_system: 0 }
+                    ];
+                    // Ensure nas data default directory exists
+                    const defaultNasPath = path_1.default.resolve(process.cwd(), 'data', 'storage');
+                    if (!fs_1.default.existsSync(defaultNasPath)) {
+                        fs_1.default.mkdirSync(defaultNasPath, { recursive: true });
+                    }
+                    const stmt = this.db.prepare('INSERT OR IGNORE INTO storage_roots (id, name, path, is_system) VALUES (?, ?, ?, ?)');
+                    for (const root of defaultRoots) {
+                        stmt.run(root.id, root.name, root.path, root.is_system);
+                    }
+                    stmt.finalize();
+                }
+            });
+            // Insert default admin if no users exist
+            this.db.get('SELECT COUNT(*) as count FROM users', (err, row) => {
+                if (!err && row && row.count === 0) {
+                    const defaultPass = process.env.INITIAL_ADMIN_PASSWORD || 'admin123';
+                    const hash = bcryptjs_1.default.hashSync(defaultPass, 10);
+                    this.db.run('INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)', [
+                        'admin',
+                        hash,
+                        Date.now()
+                    ]);
+                    console.log(`[CanyatNAS] Initial admin user created. Username: admin, Password: ${defaultPass}`);
+                }
+            });
+        });
+    }
+    // User Management
+    getUser(username) {
+        return new Promise((resolve, reject) => {
+            this.db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
+                if (err)
+                    reject(err);
+                else
+                    resolve(row);
+            });
+        });
+    }
+    setUserPassword(username, newPasswordHash) {
+        return new Promise((resolve, reject) => {
+            this.db.run('UPDATE users SET password_hash = ? WHERE username = ?', [newPasswordHash, username], function (err) {
+                if (err)
+                    reject(err);
+                else
+                    resolve(this.changes > 0);
+            });
+        });
+    }
+    cachedStorageRoots = null;
+    cachedSettings = new Map();
+    // Storage Roots Management with in-memory caching
+    getStorageRoots() {
+        if (this.cachedStorageRoots !== null) {
+            return Promise.resolve(this.cachedStorageRoots);
+        }
+        return new Promise((resolve, reject) => {
+            this.db.all('SELECT id, name, path, is_system as isSystem FROM storage_roots', (err, rows) => {
+                if (err)
+                    reject(err);
+                else {
+                    const list = rows.map(r => ({ ...r, isSystem: Boolean(r.isSystem) }));
+                    this.cachedStorageRoots = list;
+                    resolve(list);
+                }
+            });
+        });
+    }
+    addStorageRoot(name, dirPath) {
+        return new Promise((resolve, reject) => {
+            const id = 'root_' + Date.now();
+            const resolvedPath = path_1.default.resolve(dirPath);
+            this.db.run('INSERT INTO storage_roots (id, name, path, is_system) VALUES (?, ?, ?, 0)', [id, name, resolvedPath], (err) => {
+                if (err)
+                    reject(err);
+                else {
+                    this.cachedStorageRoots = null; // Invalidate cache
+                    resolve({ id, name, path: resolvedPath, isSystem: false });
+                }
+            });
+        });
+    }
+    removeStorageRoot(id) {
+        return new Promise((resolve, reject) => {
+            this.db.run('DELETE FROM storage_roots WHERE id = ?', [id], (err) => {
+                if (err)
+                    reject(err);
+                else {
+                    this.cachedStorageRoots = null; // Invalidate cache
+                    resolve(true);
+                }
+            });
+        });
+    }
+    // Share Links
+    createShare(share) {
+        return new Promise((resolve, reject) => {
+            this.db.run(`INSERT INTO shares (id, file_name, path, relative_path, is_dir, token, has_password, password_hash, expires_at, max_downloads, download_count, created_at, note, file_size)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)`, [
+                share.id,
+                share.fileName,
+                share.path,
+                share.relativePath,
+                share.isDir ? 1 : 0,
+                share.token,
+                share.hasPassword ? 1 : 0,
+                share.passwordHash || null,
+                share.expiresAt,
+                share.maxDownloads,
+                share.createdAt,
+                share.note,
+                share.fileSize || 0
+            ], (err) => {
+                if (err)
+                    reject(err);
+                else
+                    resolve({ ...share, downloadCount: 0 });
+            });
+        });
+    }
+    getShareByToken(token) {
+        return new Promise((resolve, reject) => {
+            this.db.get('SELECT * FROM shares WHERE token = ?', [token], (err, row) => {
+                if (err)
+                    reject(err);
+                else if (!row)
+                    resolve(null);
+                else {
+                    resolve({
+                        id: row.id,
+                        fileName: row.file_name,
+                        path: row.path,
+                        relativePath: row.relative_path,
+                        isDir: Boolean(row.is_dir),
+                        token: row.token,
+                        hasPassword: Boolean(row.has_password),
+                        passwordHash: row.password_hash,
+                        expiresAt: row.expires_at,
+                        maxDownloads: row.max_downloads,
+                        downloadCount: row.download_count,
+                        createdAt: row.created_at,
+                        note: row.note,
+                        fileSize: row.file_size
+                    });
+                }
+            });
+        });
+    }
+    listAllShares() {
+        return new Promise((resolve, reject) => {
+            this.db.all('SELECT * FROM shares ORDER BY created_at DESC', (err, rows) => {
+                if (err)
+                    reject(err);
+                else {
+                    resolve(rows.map(row => ({
+                        id: row.id,
+                        fileName: row.file_name,
+                        path: row.path,
+                        relativePath: row.relative_path,
+                        isDir: Boolean(row.is_dir),
+                        token: row.token,
+                        hasPassword: Boolean(row.has_password),
+                        expiresAt: row.expires_at,
+                        maxDownloads: row.max_downloads,
+                        downloadCount: row.download_count,
+                        createdAt: row.created_at,
+                        note: row.note,
+                        fileSize: row.file_size
+                    })));
+                }
+            });
+        });
+    }
+    deleteShare(id) {
+        return new Promise((resolve, reject) => {
+            this.db.run('DELETE FROM shares WHERE id = ?', [id], function (err) {
+                if (err)
+                    reject(err);
+                else
+                    resolve(this.changes > 0);
+            });
+        });
+    }
+    incrementShareDownload(token) {
+        return new Promise((resolve, reject) => {
+            this.db.run('UPDATE shares SET download_count = download_count + 1 WHERE token = ?', [token], (err) => {
+                if (err)
+                    reject(err);
+                else
+                    resolve();
+            });
+        });
+    }
+    // Settings Key-Value with memory caching
+    getSetting(key, defaultValue = '') {
+        if (this.cachedSettings.has(key)) {
+            return Promise.resolve(this.cachedSettings.get(key));
+        }
+        return new Promise((resolve) => {
+            this.db.get('SELECT value FROM settings WHERE key = ?', [key], (err, row) => {
+                if (err || !row) {
+                    this.cachedSettings.set(key, defaultValue);
+                    resolve(defaultValue);
+                }
+                else {
+                    this.cachedSettings.set(key, row.value);
+                    resolve(row.value);
+                }
+            });
+        });
+    }
+    setSetting(key, value) {
+        return new Promise((resolve, reject) => {
+            this.db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value], (err) => {
+                if (err)
+                    reject(err);
+                else {
+                    this.cachedSettings.set(key, value);
+                    resolve();
+                }
+            });
+        });
+    }
+}
+exports.DbService = DbService;
+exports.dbService = new DbService();
