@@ -1,49 +1,48 @@
 @echo off
 chcp 65001 >nul
-title CanyatNAS 控制面板服务
+title CanyatNAS Control Panel
 
 echo ========================================================
-echo        🚀 CanyatNAS - Windows NAS & Docker 控制面板
+echo        CanyatNAS - Windows NAS Control Panel
 echo ========================================================
 echo.
 
-:: 检查 Node.js 环境
+REM Check Node.js
 where node >nul 2>nul
 if %errorlevel% neq 0 (
-    echo [错误] 未检测到 Node.js 环境！
-    echo 请先前往 https://nodejs.org 下载并安装 Node.js (推荐 v18 或更高版本)。
+    echo [Error] Node.js is not found in PATH!
+    echo Please install Node.js (v18+) from https://nodejs.org
     echo.
     pause
     exit /b 1
 )
 
-:: 检查并安装后端运行依赖 (如果 node_modules 不存在)
+REM Check backend dependencies
 if not exist "backend\node_modules" (
-    echo [CanyatNAS] 正在安装后端依赖...
+    echo [CanyatNAS] Installing backend dependencies...
     cd backend
     call npm install --omit=dev
     cd ..
 )
 
-:: 检查是否已有编译产物
+REM Check pre-compiled backend
 if not exist "backend\dist\server.js" (
-    echo [CanyatNAS] 未找到编译产物，正在自动编译...
+    echo [CanyatNAS] Building backend and frontend...
     call npm run build
 )
 
-:: 设置环境变量
 set PORT=5678
 set NODE_ENV=production
 
-echo [CanyatNAS] 正在启动控制面板服务...
-echo [CanyatNAS] 访问地址: http://localhost:5678
-echo [CanyatNAS] 默认管理员: admin  密码: admin123
+echo [CanyatNAS] Starting server on port 5678...
+echo [CanyatNAS] Web URL: http://localhost:5678
+echo [CanyatNAS] Default User: admin  Password: admin123
 echo.
 
-:: 在后台启动浏览器
+REM Open browser in background
 start http://localhost:5678
 
-:: 启动后端服务
+REM Start backend server
 node backend\dist\server.js
 
 pause
